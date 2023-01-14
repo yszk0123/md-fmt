@@ -3,6 +3,7 @@ use std::fs;
 
 pub struct Config {
     pub input: String,
+    pub write: bool,
 }
 
 impl Config {
@@ -13,14 +14,22 @@ impl Config {
             Some(arg) => arg,
             None => return Err("required input file path"),
         };
-        Ok(Config { input })
+        let write = match args.next() {
+            Some(arg) => arg == "--write",
+            None => false,
+        };
+        Ok(Config { input, write })
     }
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.input)?;
+    let contents = fs::read_to_string(config.input.clone())?;
 
-    println!("Contents:\n{contents}");
+    if config.write {
+        fs::write(config.input.clone(), contents)?;
+    } else {
+        println!("{contents}");
+    }
 
     Ok(())
 }
