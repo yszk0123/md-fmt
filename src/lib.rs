@@ -1,5 +1,19 @@
+use clap::Parser;
 use std::error::Error;
 use std::fs;
+
+/// Simple Markdown Formatter
+#[derive(Parser, Debug)]
+#[command(version)]
+struct Args {
+    /// Source
+    #[arg(short, long)]
+    input: String,
+
+    /// Overwrite
+    #[arg(short, long)]
+    write: bool,
+}
 
 pub struct Config {
     pub input: String,
@@ -7,18 +21,13 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn build(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
-        args.next();
+    pub fn new() -> Result<Config, &'static str> {
+        let args = Args::parse();
 
-        let input = match args.next() {
-            Some(arg) => arg,
-            None => return Err("required input file path"),
-        };
-        let write = match args.next() {
-            Some(arg) => arg == "--write",
-            None => false,
-        };
-        Ok(Config { input, write })
+        Ok(Config {
+            input: args.input.clone(),
+            write: args.write,
+        })
     }
 }
 
