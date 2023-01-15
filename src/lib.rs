@@ -3,6 +3,12 @@ use clap::Parser;
 use std::fs;
 use std::path::PathBuf;
 
+mod formatter;
+mod rules;
+
+use formatter::Formatter;
+use rules::{normalize_heading::NormalizeHeadingRule, trim::TrimRule};
+
 /// Simple Markdown Formatter
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -38,7 +44,11 @@ pub fn run(config: Config) -> Result<()> {
         let content = fs::read_to_string(&file)
             .with_context(|| format!("could not read file `{}`", file.display()))?;
 
-        let content = format!("{}\n", content.trim());
+        let formatter = Formatter::new(vec![
+            Box::new(TrimRule {}),
+            Box::new(NormalizeHeadingRule {}),
+        ]);
+        let content = formatter.apply(content);
 
         if config.write {
             fs::write(&file, content)
