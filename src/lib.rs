@@ -38,6 +38,8 @@ pub fn run(config: Config) -> Result<()> {
         let content = fs::read_to_string(&file)
             .with_context(|| format!("could not read file `{}`", file.display()))?;
 
+        let content = format!("{}\n", content.trim());
+
         if config.write {
             fs::write(&file, content)
                 .with_context(|| format!("could not write file `{}`", file.display()))?;
