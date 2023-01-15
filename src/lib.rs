@@ -1,5 +1,5 @@
+use anyhow::{Context, Result};
 use clap::Parser;
-use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 
@@ -22,8 +22,9 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new() -> Result<Config, &'static str> {
-        let args = Args::parse();
+    pub fn build(args: impl Iterator<Item = String>) -> Result<Config> {
+        let args =
+            Args::try_parse_from(args).with_context(|| format!("could not parse arguments"))?;
 
         Ok(Config {
             files: args.file.clone(),
@@ -32,12 +33,14 @@ impl Config {
     }
 }
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+pub fn run(config: Config) -> Result<()> {
     for file in config.files {
-        let content = fs::read_to_string(&file)?;
+        let content = fs::read_to_string(&file)
+            .with_context(|| format!("could not read file `{}`", file.display()))?;
 
         if config.write {
-            fs::write(&file, content)?;
+            fs::write(&file, content)
+                .with_context(|| format!("could not write file `{}`", file.display()))?;
         } else {
             println!("{content}");
         }

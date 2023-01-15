@@ -1,14 +1,11 @@
+use anyhow::Result;
 use mdfmt::Config;
-use std::process;
+use std::env;
 
-fn main() {
-    let config = Config::new().unwrap_or_else(|err| {
-        eprintln!("Problem parsing arguments: {err}");
-        process::exit(1);
-    });
+fn main() -> Result<()> {
+    let config = Config::build(env::args())?;
 
-    if let Err(e) = mdfmt::run(config) {
-        eprintln!("Application error: {e}");
-        process::exit(1);
-    }
+    mdfmt::run(config)?;
+
+    Ok(())
 }
