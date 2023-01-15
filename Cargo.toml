@@ -6,6 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.68"
+clap = { version = "4.1.1", features = ["derive"] }
+thiserror = "1.0.38"
 
 [[bin]]
 path = "src/main.rs"

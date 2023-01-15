@@ -1,34 +1,49 @@
-use std::error::Error;
+use anyhow::{Context, Result};
+use clap::Parser;
 use std::fs;
+use std::path::PathBuf;
+
+/// Simple Markdown Formatter
+#[derive(Parser, Debug)]
+#[command(version)]
+struct Args {
+    /// Source
+    #[arg(short, long)]
+    file: Vec<PathBuf>,
+
+    /// Overwrite
+    #[arg(short, long, default_value = "false")]
+    write: bool,
+}
 
 pub struct Config {
-    pub input: String,
+    pub files: Vec<PathBuf>,
     pub write: bool,
 }
 
 impl Config {
-    pub fn build(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
-        args.next();
+    pub fn build(args: impl Iterator<Item = String>) -> Result<Config> {
+        let args =
+            Args::try_parse_from(args).with_context(|| format!("could not parse arguments"))?;
 
-        let input = match args.next() {
-            Some(arg) => arg,
-            None => return Err("required input file path"),
-        };
-        let write = match args.next() {
-            Some(arg) => arg == "--write",
-            None => false,
-        };
-        Ok(Config { input, write })
+        Ok(Config {
+            files: args.file.clone(),
+            write: args.write,
+        })
     }
 }
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.input.clone())?;
+pub fn run(config: Config) -> Result<()> {
+    for file in config.files {
+        let content = fs::read_to_string(&file)
+            .with_context(|| format!("could not read file `{}`", file.display()))?;
 
-    if config.write {
-        fs::write(config.input.clone(), contents)?;
-    } else {
-        println!("{contents}");
+        if config.write {
+            fs::write(&file, content)
+                .with_context(|| format!("could not write file `{}`", file.display()))?;
+        } else {
+            println!("{content}");
+        }
     }
 
     Ok(())
