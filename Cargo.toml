@@ -9,6 +9,7 @@ edition = "2021"
 anyhow = "1.0.68"
 clap = { version = "4.1.1", features = ["derive"] }
 itertools = "0.10.5"
+markdown = "1.0.0-alpha.5"
 thiserror = "1.0.38"
 
 [[bin]]
