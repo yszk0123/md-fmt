@@ -1,6 +1,7 @@
 use anyhow::Result;
-use mdfmt::Config;
 use std::env;
+
+use mdfmt::cli::config::Config;
 
 fn main() -> Result<()> {
     let config = Config::build(env::args())?;

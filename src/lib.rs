@@ -1,49 +1,58 @@
-use anyhow::{Context, Result};
-use clap::Parser;
+pub mod cli;
+mod md;
+mod note;
+
+use anyhow::{anyhow, Context, Result};
+use markdown::{to_mdast, Constructs, ParseOptions};
 use std::fs;
-use std::path::PathBuf;
 
-/// Simple Markdown Formatter
-#[derive(Parser, Debug)]
-#[command(version)]
-struct Args {
-    /// Source
-    #[arg(short, long)]
-    file: Vec<PathBuf>,
+use crate::cli::config::Config;
+use crate::md::serializer::to_markdown;
+use crate::note::metadata::Metadata;
 
-    /// Overwrite
-    #[arg(short, long, default_value = "false")]
-    write: bool,
-}
-
-pub struct Config {
-    pub files: Vec<PathBuf>,
-    pub write: bool,
-}
-
-impl Config {
-    pub fn build(args: impl Iterator<Item = String>) -> Result<Config> {
-        let args =
-            Args::try_parse_from(args).with_context(|| format!("could not parse arguments"))?;
-
-        Ok(Config {
-            files: args.file.clone(),
-            write: args.write,
-        })
-    }
-}
+pub use crate::md::pretty::pretty;
+pub use crate::note::{from_note, to_note};
 
 pub fn run(config: Config) -> Result<()> {
     for file in config.files {
         let content = fs::read_to_string(&file)
             .with_context(|| format!("could not read file `{}`", file.display()))?;
 
+        let node = to_mdast(
+            &content,
+            &ParseOptions {
+                constructs: Constructs {
+                    frontmatter: true,
+                    ..Constructs::gfm()
+                },
+                ..ParseOptions::gfm()
+            },
+        )
+        .map_err(|s| anyhow!(s))
+        .with_context(|| format!("could not parse file `{}`", file.display()))?;
+
+        if config.md {
+            let s = pretty(&node);
+            println!("{}", s);
+            return Ok(());
+        }
+
+        if config.note {
+            let note = to_note(&node)?;
+            println!("{:?}", note);
+            return Ok(());
+        }
+
+        let content = to_markdown(&node)
+            .with_context(|| format!("could not stringify file `{}`", file.display()))?;
+
         if config.write {
             fs::write(&file, content)
                 .with_context(|| format!("could not write file `{}`", file.display()))?;
-        } else {
-            println!("{content}");
+            return Ok(());
         }
+
+        println!("{content}");
     }
 
     Ok(())
