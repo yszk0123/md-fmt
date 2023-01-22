@@ -24,11 +24,11 @@ pub struct Metadata {
 
 impl Metadata {
     pub fn from_str(s: &str) -> Result<Self> {
-        serde_yaml::from_str(s).with_context(|| format!("could not stringify front matter"))
+        serde_yaml::from_str(s).with_context(|| "could not stringify front matter".to_string())
     }
 
     pub fn to_md(&self) -> Result<String> {
-        serde_yaml::to_string(self).with_context(|| format!("could not stringify front matter"))
+        serde_yaml::to_string(self).with_context(|| "could not stringify front matter".to_string())
     }
 }
 

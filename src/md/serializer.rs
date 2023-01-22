@@ -87,7 +87,7 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
         Node::InlineCode(node) => Ok(format!("`{}`", node.value)),
         Node::ThematicBreak(_) => Ok("---\n".to_owned()),
 
-        node @ _ => Err(anyhow!("{:?} not supported syntax", node)),
+        node => Err(anyhow!("{:?} not supported syntax", node)),
     }
 }
 

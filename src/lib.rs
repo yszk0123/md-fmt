@@ -14,9 +14,9 @@ use crate::note::metadata::Metadata;
 pub use crate::md::pretty::pretty;
 pub use crate::note::{from_note, to_note};
 
-pub fn to_mdast_from_str(s: &String) -> Result<Node> {
+pub fn to_mdast_from_str(s: &str) -> Result<Node> {
     to_mdast(
-        &s,
+        s,
         &ParseOptions {
             constructs: Constructs {
                 frontmatter: true,
