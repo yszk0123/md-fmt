@@ -21,19 +21,6 @@ pub struct Metadata {
     others: HashMap<String, serde_yaml::Value>,
 }
 
-impl Metadata {
-    pub fn from_str(s: &str) -> Result<Self> {
-        serde_yaml::from_str(s).with_context(|| "could not stringify front matter".to_string())
-    }
-
-    pub fn to_md(&self) -> Result<String> {
-        serde_yaml::to_string(self).with_context(|| "could not stringify front matter".to_string())
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BookmarkId(String);
-
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug)]
@@ -46,4 +33,17 @@ pub struct Bookmark {
     #[serde(flatten)]
     #[serde_as(as = "HashMap<DisplayFromStr, _>")]
     others: HashMap<String, serde_yaml::Value>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BookmarkId(String);
+
+impl Metadata {
+    pub fn from_str(s: &str) -> Result<Self> {
+        serde_yaml::from_str(s).with_context(|| "could not stringify front matter".to_string())
+    }
+
+    pub fn to_md(&self) -> Result<String> {
+        serde_yaml::to_string(self).with_context(|| "could not stringify front matter".to_string())
+    }
 }
