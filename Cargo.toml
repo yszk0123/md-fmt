@@ -20,3 +20,6 @@ thiserror = "1.0.38"
 [[bin]]
 path = "src/main.rs"
 name = "md-fmt"
+
+[dev-dependencies]
+assert_matches = "1.5.0"
