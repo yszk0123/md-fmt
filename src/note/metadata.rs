@@ -1,8 +1,7 @@
 use anyhow::{Context, Result};
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use serde_json::value::RawValue;
-use serde_with::{json::JsonString, serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
+use serde_with::{serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
 use std::collections::HashMap;
 
 #[serde_as]
@@ -18,8 +17,8 @@ pub struct Metadata {
     pub tags: Option<Vec<String>>,
 
     #[serde(flatten)]
-    #[serde_as(as = "HashMap<DisplayFromStr, JsonString>")]
-    others: HashMap<String, Box<RawValue>>,
+    #[serde_as(as = "HashMap<DisplayFromStr, _>")]
+    others: HashMap<String, serde_yaml::Value>,
 }
 
 impl Metadata {
@@ -45,6 +44,6 @@ pub struct Bookmark {
     pub journal_date: Option<DateTime<Local>>,
 
     #[serde(flatten)]
-    #[serde_as(as = "HashMap<DisplayFromStr, JsonString>")]
-    others: HashMap<String, Box<RawValue>>,
+    #[serde_as(as = "HashMap<DisplayFromStr, _>")]
+    others: HashMap<String, serde_yaml::Value>,
 }
