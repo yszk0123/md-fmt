@@ -33,7 +33,7 @@ pub fn from_note(note: &Note) -> Result<Node> {
     let mut children = note
         .blocks
         .iter()
-        .map(|block| from_block(block))
+        .map(from_block)
         .collect::<Result<Vec<Node>>>()?;
     children.splice(0..0, yaml);
     Ok(Node::Root(Root {
@@ -58,7 +58,7 @@ fn to_block(node: &Node, context: &mut Context) -> Result<Block> {
             Ok(Block::Empty)
         }
 
-        node @ _ => Ok(Block::Node(node.clone())),
+        node => Ok(Block::Node(node.clone())),
     }
 }
 
@@ -67,10 +67,7 @@ fn from_block(node: &Block) -> Result<Node> {
         Block::Empty => Ok(Node::Break(Break { position: None })),
 
         Block::Container { children } => {
-            let children = children
-                .iter()
-                .map(|child| from_block(child))
-                .collect::<Result<_>>()?;
+            let children = children.iter().map(from_block).collect::<Result<_>>()?;
             Ok(Node::Root(Root {
                 children,
                 position: None,

@@ -31,7 +31,7 @@ pub struct Config {
 impl Config {
     pub fn build(args: impl Iterator<Item = String>) -> Result<Config> {
         let args =
-            Args::try_parse_from(args).with_context(|| format!("could not parse arguments"))?;
+            Args::try_parse_from(args).with_context(|| "could not parse arguments".to_string())?;
 
         Ok(Config {
             files: args.file.clone(),

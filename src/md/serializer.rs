@@ -3,7 +3,7 @@ use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use markdown::mdast::Node;
 
-const INDENT: &str = "  ";
+const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
 
 struct Context {
@@ -87,7 +87,7 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
         Node::InlineCode(node) => Ok(format!("`{}`", node.value)),
         Node::ThematicBreak(_) => Ok("---\n".to_owned()),
 
-        node @ _ => Err(anyhow!("{:?} not supported syntax", node)),
+        node => Err(anyhow!("{:?} not supported syntax", node)),
     }
 }
 
@@ -102,7 +102,13 @@ fn map_children(children: &[Node], context: &mut Context, sep: Option<&str>) -> 
 fn quote(text: String, context: &mut Context) -> String {
     text.trim_end()
         .split('\n')
-        .map(|line| format!("{}> {}", indent(context.depth), line))
+        .map(|line| {
+            if line.is_empty() {
+                format!("{}>", indent(context.depth))
+            } else {
+                format!("{}> {}", indent(context.depth), line)
+            }
+        })
         .collect_vec()
         .join("\n")
         + "\n"
