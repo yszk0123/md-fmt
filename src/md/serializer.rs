@@ -26,7 +26,7 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
         Node::BlockQuote(node) => {
             let s = map_children(&node.children, context, Some(NEWLINE))?;
             Ok(quote(s, context))
-        }
+        },
         Node::List(node) => node
             .children
             .iter()
@@ -43,22 +43,23 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
             .collect::<Result<String>>(),
         Node::Heading(node) => {
             let s = map_children(&node.children, context, None)?;
-            Ok(format!("{} {}", "#".repeat(node.depth.into()), s))
-        }
+            let d: usize = node.depth.into();
+            Ok(format!("{} {}", "#".repeat(d - 1), s))
+        },
         Node::Code(node) => {
             let lang = node.lang.clone().unwrap_or_else(|| "".into());
             let meta = node
                 .meta
                 .clone()
-                .map(|v| format!(" {}", v))
+                .map(|v| format!(" {v}"))
                 .unwrap_or_else(|| "".into());
             Ok(format!("```{}{}\n{}\n```\n", lang, meta, node.value))
-        }
+        },
         Node::ListItem(node) => Ok(format!(
             "{}{} {}",
             indent(context.depth - 1),
             if let Some(order) = context.order {
-                format!("{}.", order)
+                format!("{order}.")
             } else {
                 "-".to_owned()
             },
@@ -70,20 +71,19 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
                 .iter()
                 .map(|node| to_md(node, context).map(|v| v.trim().to_string()))
                 .enumerate()
-                .map(|(i, r)| {
-                    if i > 0 {
-                        r.map(|v| format!(" {}", v))
-                    } else {
-                        r
-                    }
-                })
+                .map(|(i, r)| if i > 0 { r.map(|v| format!(" {v}")) } else { r })
                 .collect::<Result<String>>()?;
             Ok(format!("{}\n", s.trim()))
-        }
+        },
+        Node::Strong(node) => {
+            let s = map_children(&node.children, context, None)?;
+            Ok(format!("**{}**", s))
+        },
+        Node::Break(_) => Ok("\n".into()),
 
         // Literal
         Node::Text(text) => Ok(text.value.to_owned()),
-        Node::Yaml(node) => Ok(format!("---\n{}\n---\n", node.value)),
+        Node::Yaml(node) => Ok(format!("---\n{}---\n", node.value)),
         Node::InlineCode(node) => Ok(format!("`{}`", node.value)),
         Node::ThematicBreak(_) => Ok("---\n".to_owned()),
 

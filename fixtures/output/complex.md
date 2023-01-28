@@ -9,6 +9,7 @@ Hello, world!
 2. two
 3
 
+> [!note]
 > 88
 >
 > - 1
@@ -27,7 +28,7 @@ Hello, world!
 apple
 pie
 
-foo `bar` baz
+foo `bar` baz **foo** bar
 
 ---
 

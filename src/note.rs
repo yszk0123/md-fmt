@@ -1,6 +1,7 @@
 mod from_note;
 mod to_note;
 
+pub mod flexible_date_time;
 pub mod metadata;
 pub mod model;
 
