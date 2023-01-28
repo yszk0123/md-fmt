@@ -71,13 +71,29 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
                 .iter()
                 .map(|node| to_md(node, context).map(|v| v.trim().to_string()))
                 .enumerate()
-                .map(|(i, r)| if i > 0 { r.map(|v| format!(" {v}")) } else { r })
+                .map(|(i, r)| {
+                    if i > 0 {
+                        r.map(|v| {
+                            if v.is_empty() {
+                                String::from("")
+                            } else {
+                                format!(" {v}")
+                            }
+                        })
+                    } else {
+                        r
+                    }
+                })
                 .collect::<Result<String>>()?;
             Ok(format!("{}\n", s.trim()))
         },
+        Node::Emphasis(node) => {
+            let s = map_children(&node.children, context, None)?;
+            Ok(format!("*{s}*"))
+        },
         Node::Strong(node) => {
             let s = map_children(&node.children, context, None)?;
-            Ok(format!("**{}**", s))
+            Ok(format!("**{s}**"))
         },
         Node::Break(_) => Ok("\n".into()),
 
