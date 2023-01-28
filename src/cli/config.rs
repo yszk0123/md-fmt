@@ -1,6 +1,7 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, Result};
 use clap::Parser as ClaspParser;
-use std::path::PathBuf;
 
 /// Simple Markdown Formatter
 #[derive(ClaspParser, Debug)]

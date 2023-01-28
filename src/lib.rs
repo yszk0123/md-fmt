@@ -1,18 +1,19 @@
+mod ast;
 pub mod cli;
-mod md;
 mod note;
+
+use std::fs;
 
 use anyhow::{anyhow, Context, Result};
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
-use std::fs;
 
+pub use crate::ast::builder;
+pub use crate::ast::pretty::pretty;
+pub use crate::ast::to_markdown::to_markdown;
 use crate::cli::config::Config;
-pub use crate::md::serializer::to_markdown;
 use crate::note::metadata::Metadata;
-
-pub use crate::md::pretty::pretty;
-pub use crate::note::{from_note, to_note};
+pub use crate::note::{from_ast, to_ast};
 
 pub fn to_mdast_from_str(s: &str) -> Result<Node> {
     to_mdast(
@@ -28,6 +29,13 @@ pub fn to_mdast_from_str(s: &str) -> Result<Node> {
     .map_err(|s| anyhow!(s))
 }
 
+pub fn format(node: &Node) -> Result<String> {
+    let note = from_ast(node)?;
+    let note = note.normalize();
+    let node = to_ast(&note)?;
+    to_markdown(&node)
+}
+
 pub fn run(config: Config) -> Result<()> {
     for file in config.files {
         let content = fs::read_to_string(&file)
@@ -38,17 +46,17 @@ pub fn run(config: Config) -> Result<()> {
 
         if config.md {
             let s = pretty(&node);
-            println!("{}", s);
+            println!("{s}");
             return Ok(());
         }
 
         if config.note {
-            let note = to_note(&node)?;
-            println!("{:?}", note);
+            let note = from_ast(&node)?;
+            println!("{note:?}");
             return Ok(());
         }
 
-        let content = to_markdown(&node)
+        let content = format(&node)
             .with_context(|| format!("could not stringify file `{}`", file.display()))?;
 
         if config.write {

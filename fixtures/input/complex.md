@@ -25,7 +25,7 @@ Hello, world!
 apple
 pie
 
-foo `bar` baz
+foo `bar` baz **foo** bar
 
 ---
 
