@@ -37,12 +37,12 @@ impl Parser {
         Ok(None)
     }
 
-    fn parse_head(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Block> {
+    fn parse_head(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Section> {
         self.parse_body(iter, 2)
     }
 
-    fn parse_body(&self, iter: &mut Peekable<Iter<m::Node>>, min_depth: u8) -> Result<Block> {
-        let mut res: Vec<NoteNode> = vec![];
+    fn parse_body(&self, iter: &mut Peekable<Iter<m::Node>>, min_depth: u8) -> Result<Section> {
+        let mut res: Vec<Block> = vec![];
         while let Some(node) = iter.peek() {
             match *node {
                 m::Node::Heading(m::Heading { depth, .. })
@@ -54,7 +54,7 @@ impl Parser {
                     iter.next();
                     let mut block = self.parse_body(iter, node.depth)?;
                     block.title = Some(self.parse_heading(node.clone()));
-                    res.push(NoteNode::Block(block));
+                    res.push(Block::Section(block));
                 },
                 m::Node::BlockQuote(node) => {
                     iter.next();
@@ -62,21 +62,21 @@ impl Parser {
                 },
                 node => {
                     iter.next();
-                    res.push(NoteNode::Node(node.clone()));
+                    res.push(Block::Node(node.clone()));
                 },
             }
         }
 
-        Ok(Block::new(None, res))
+        Ok(Section::new(None, res))
     }
 
-    fn parse_block_quote(&self, block_quote: &m::BlockQuote) -> NoteNode {
-        NoteNode::card(
+    fn parse_block_quote(&self, block_quote: &m::BlockQuote) -> Block {
+        Block::card(
             NoteKind::default(),
             block_quote
                 .children
                 .iter()
-                .map(|node| NoteNode::Node(node.clone()))
+                .map(|node| Block::Node(node.clone()))
                 .collect(),
         )
     }
@@ -115,8 +115,8 @@ mod tests {
             from_ast(&root(vec![text("foo")]))?,
             Note::new(
                 None,
-                Block::new(None, vec![NoteNode::Node(text("foo"))]),
-                Block::default()
+                Section::new(None, vec![Block::Node(text("foo"))]),
+                Section::default()
             ),
         );
         Ok(())
@@ -128,8 +128,8 @@ mod tests {
             from_ast(&root(vec![heading(2, vec![text("foo")])]))?,
             Note::new(
                 None,
-                Block::children(vec![NoteNode::block("foo", vec![])]),
-                Block::default()
+                Section::children(vec![Block::section("foo", vec![])]),
+                Section::default()
             ),
         );
         Ok(())
@@ -141,8 +141,8 @@ mod tests {
             from_ast(&root(vec![heading(1, vec![text("foo")])]))?,
             Note::new(
                 None,
-                Block::default(),
-                Block::children(vec![NoteNode::block("foo", vec![])])
+                Section::default(),
+                Section::children(vec![Block::section("foo", vec![])])
             ),
         );
         Ok(())
@@ -157,10 +157,10 @@ mod tests {
             ]))?,
             Note::new(
                 None,
-                Block::default(),
-                Block::children(vec![NoteNode::block(
+                Section::default(),
+                Section::children(vec![Block::section(
                     "foo",
-                    vec![NoteNode::block("bar", vec![])]
+                    vec![Block::section("bar", vec![])]
                 )])
             ),
         );
@@ -176,8 +176,8 @@ mod tests {
             ]))?,
             Note::new(
                 None,
-                Block::children(vec![NoteNode::block("foo", vec![])]),
-                Block::children(vec![NoteNode::block("bar", vec![])])
+                Section::children(vec![Block::section("foo", vec![])]),
+                Section::children(vec![Block::section("bar", vec![])])
             ),
         );
         Ok(())
@@ -189,14 +189,14 @@ mod tests {
             from_ast(&root(vec![block_quote(vec![text("foo")])]))?,
             Note::new(
                 None,
-                Block::new(
+                Section::new(
                     None,
-                    vec![NoteNode::card(
+                    vec![Block::card(
                         NoteKind::default(),
-                        vec![NoteNode::Node(text("foo"))]
+                        vec![Block::Node(text("foo"))]
                     )]
                 ),
-                Block::default()
+                Section::default()
             ),
         );
         Ok(())
@@ -211,8 +211,8 @@ mod tests {
                     title: Some("foo".into()),
                     ..Default::default()
                 }),
-                Block::default(),
-                Block::default()
+                Section::default(),
+                Section::default()
             )
         );
         Ok(())
@@ -223,7 +223,7 @@ mod tests {
         assert_eq!(
             from_ast(&root(vec![text("foo")]))?,
             Note {
-                head: Block::new(None, vec![NoteNode::Node(text("foo"))]),
+                head: Section::new(None, vec![Block::Node(text("foo"))]),
                 ..Default::default()
             }
         );

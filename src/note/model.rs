@@ -5,12 +5,12 @@ use crate::Metadata;
 #[derive(PartialEq, Debug, Default)]
 pub struct Note {
     pub metadata: Option<Metadata>,
-    pub head: Block,
-    pub body: Block,
+    pub head: Section,
+    pub body: Section,
 }
 
 impl Note {
-    pub fn new(metadata: Option<Metadata>, head: Block, body: Block) -> Self {
+    pub fn new(metadata: Option<Metadata>, head: Section, body: Section) -> Self {
         Self {
             metadata,
             head,
@@ -28,20 +28,20 @@ impl Note {
 }
 
 #[derive(PartialEq, Debug)]
-pub enum NoteNode {
+pub enum Block {
     Empty,
-    Block(Block),
+    Section(Section),
     Card(Card),
     Node(Node),
 }
 
-impl NoteNode {
-    pub fn card(kind: NoteKind, children: Vec<NoteNode>) -> Self {
+impl Block {
+    pub fn card(kind: NoteKind, children: Vec<Block>) -> Self {
         Self::Card(Card { kind, children })
     }
 
-    pub fn block(title: impl ToString, children: Vec<NoteNode>) -> Self {
-        Self::Block(Block {
+    pub fn section(title: impl ToString, children: Vec<Block>) -> Self {
+        Self::Section(Section {
             title: Some(title.to_string()),
             children,
         })
@@ -53,17 +53,17 @@ impl NoteNode {
 }
 
 #[derive(PartialEq, Debug, Default)]
-pub struct Block {
+pub struct Section {
     pub title: Option<String>,
-    pub children: Vec<NoteNode>,
+    pub children: Vec<Block>,
 }
 
-impl Block {
-    pub fn new(title: Option<String>, children: Vec<NoteNode>) -> Self {
+impl Section {
+    pub fn new(title: Option<String>, children: Vec<Block>) -> Self {
         Self { title, children }
     }
 
-    pub fn children(children: Vec<NoteNode>) -> Self {
+    pub fn children(children: Vec<Block>) -> Self {
         Self {
             title: None,
             children,
@@ -74,7 +74,7 @@ impl Block {
 #[derive(PartialEq, Debug, Default)]
 pub struct Card {
     pub kind: NoteKind,
-    pub children: Vec<NoteNode>,
+    pub children: Vec<Block>,
 }
 
 #[derive(PartialEq, Debug, Default)]

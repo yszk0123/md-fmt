@@ -23,7 +23,7 @@ fn from_yaml(metadata: &Option<Metadata>) -> Result<Vec<m::Node>> {
     }
 }
 
-fn from_block(block: &Block, depth: u8) -> Result<Vec<m::Node>> {
+fn from_block(block: &Section, depth: u8) -> Result<Vec<m::Node>> {
     let mut nodes: Vec<m::Node> = vec![];
 
     if let Some(title) = &block.title {
@@ -37,13 +37,13 @@ fn from_block(block: &Block, depth: u8) -> Result<Vec<m::Node>> {
     Ok(nodes)
 }
 
-fn from_node(node: &NoteNode, depth: u8) -> Result<Vec<m::Node>> {
+fn from_node(node: &Block, depth: u8) -> Result<Vec<m::Node>> {
     match node {
-        NoteNode::Empty => Ok(vec![]),
+        Block::Empty => Ok(vec![]),
 
-        NoteNode::Block(block) => from_block(block, depth),
+        Block::Section(block) => from_block(block, depth),
 
-        NoteNode::Card(Card { kind, children }) => {
+        Block::Card(Card { kind, children }) => {
             let children = concat(children.iter().map(|v| from_node(v, depth + 1)).collect())?;
             let children = Some(text(format!("[!{kind}]")))
                 .into_iter()
@@ -52,7 +52,7 @@ fn from_node(node: &NoteNode, depth: u8) -> Result<Vec<m::Node>> {
             Ok(vec![block_quote(children)])
         },
 
-        NoteNode::Node(node) => Ok(vec![node.clone()]),
+        Block::Node(node) => Ok(vec![node.clone()]),
     }
 }
 
@@ -76,8 +76,8 @@ mod tests {
                     title: Some("foo".into()),
                     ..Default::default()
                 }),
-                Block::default(),
-                Block::default(),
+                Section::default(),
+                Section::default(),
             ))?,
             root(vec![yaml("title: foo\n")])
         );
@@ -89,8 +89,8 @@ mod tests {
         assert_eq!(
             to_ast(&Note::new(
                 None,
-                Block::new(None, vec![NoteNode::Node(text("foo"))]),
-                Block::default(),
+                Section::new(None, vec![Block::Node(text("foo"))]),
+                Section::default(),
             ))?,
             root(vec![text("foo")]),
         );
@@ -102,8 +102,8 @@ mod tests {
         assert_eq!(
             to_ast(&Note::new(
                 None,
-                Block::new(Some("heading".into()), vec![NoteNode::Node(text("foo"))]),
-                Block::default(),
+                Section::new(Some("heading".into()), vec![Block::Node(text("foo"))]),
+                Section::default(),
             ))?,
             root(vec![heading(2, vec![text("heading")]), text("foo")])
         );
@@ -115,8 +115,8 @@ mod tests {
         assert_eq!(
             to_ast(&Note::new(
                 None,
-                Block::default(),
-                Block::new(Some("heading".into()), vec![NoteNode::Node(text("foo"))]),
+                Section::default(),
+                Section::new(Some("heading".into()), vec![Block::Node(text("foo"))]),
             ))?,
             root(vec![heading(1, vec![text("heading")]), text("foo")])
         );
@@ -128,8 +128,8 @@ mod tests {
         assert_eq!(
             to_ast(&Note::new(
                 None,
-                Block::default(),
-                Block::new(None, vec![NoteNode::Node(text("foo"))]),
+                Section::default(),
+                Section::new(None, vec![Block::Node(text("foo"))]),
             ))?,
             root(vec![text("foo")])
         );
