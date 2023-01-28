@@ -1,11 +1,11 @@
 use anyhow::Result;
 use markdown::mdast as m;
 
-use crate::md::builder::*;
+use crate::ast::builder::*;
 use crate::note::metadata::Metadata;
 use crate::note::model::*;
 
-pub fn from_note(note: &Note) -> Result<m::Node> {
+pub fn to_ast(note: &Note) -> Result<m::Node> {
     let mut children = vec![];
 
     children.extend(from_yaml(&note.metadata)?);
@@ -71,7 +71,7 @@ mod tests {
     #[test]
     fn metadata_to_node() -> Result<()> {
         assert_eq!(
-            from_note(&Note::new(
+            to_ast(&Note::new(
                 Some(Metadata {
                     title: Some("foo".into()),
                     ..Default::default()
@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn head_text_to_node() -> Result<()> {
         assert_eq!(
-            from_note(&Note::new(
+            to_ast(&Note::new(
                 None,
                 Block::new(None, vec![NoteNode::Node(text("foo"))]),
                 Block::default(),
@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn head_heading_to_node() -> Result<()> {
         assert_eq!(
-            from_note(&Note::new(
+            to_ast(&Note::new(
                 None,
                 Block::new(Some("heading".into()), vec![NoteNode::Node(text("foo"))]),
                 Block::default(),
@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn body_heading_to_node() -> Result<()> {
         assert_eq!(
-            from_note(&Note::new(
+            to_ast(&Note::new(
                 None,
                 Block::default(),
                 Block::new(Some("heading".into()), vec![NoteNode::Node(text("foo"))]),
@@ -126,7 +126,7 @@ mod tests {
     #[test]
     fn body_text_to_node() -> Result<()> {
         assert_eq!(
-            from_note(&Note::new(
+            to_ast(&Note::new(
                 None,
                 Block::default(),
                 Block::new(None, vec![NoteNode::Node(text("foo"))]),
