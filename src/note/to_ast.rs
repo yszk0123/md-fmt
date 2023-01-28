@@ -72,6 +72,8 @@ fn from_node(node: &Block, depth: u8) -> Result<Vec<m::Node>> {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use super::*;
 
     #[test]
