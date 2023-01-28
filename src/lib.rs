@@ -32,8 +32,7 @@ pub fn to_mdast_from_str(s: &str) -> Result<Node> {
 pub fn format(node: &Node) -> Result<String> {
     let note = from_ast(node)?;
     let note = note.normalize();
-    let node = to_ast(&note)?;
-    to_markdown(&node)
+    to_ast(&note)
 }
 
 pub fn run(config: Config) -> Result<()> {

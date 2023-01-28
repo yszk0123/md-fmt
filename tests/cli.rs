@@ -24,8 +24,8 @@ fn markdown() -> Result<()> {
             })?;
 
             assert_eq!(
-                expected,
                 actual,
+                expected,
                 "test \"{}\" does not match",
                 output_path.display()
             );

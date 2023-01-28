@@ -1,83 +1,88 @@
 use anyhow::Result;
-use markdown::mdast as m;
 
-use crate::ast::builder::*;
+use crate::note::builder::*;
 use crate::note::metadata::Metadata;
 use crate::note::model::*;
 
-pub fn to_ast(note: &Note) -> Result<m::Node> {
-    let mut children = vec![];
+pub fn to_ast(note: &Note) -> Result<String> {
+    let mut children = String::new();
 
-    children.extend(from_yaml(&note.metadata)?);
-    children.extend(from_head(&note.head)?);
-    children.extend(from_body(&note.body)?);
+    children.push_str(&from_yaml(&note.metadata)?);
+    children.push_str(&from_head(&note.head)?);
+    children.push_str(&from_body(&note.body)?);
 
-    Ok(root(children))
+    Ok(children.trim().to_string() + "\n")
 }
 
-fn from_yaml(metadata: &Option<Metadata>) -> Result<Vec<m::Node>> {
+fn from_yaml(metadata: &Option<Metadata>) -> Result<String> {
     if let Some(metadata) = metadata {
-        Ok(vec![yaml(metadata.to_md()?)])
+        Ok(format!("---\n{}---\n", metadata.to_md()?))
     } else {
-        Ok(vec![])
+        Ok(String::from(""))
     }
 }
 
-fn from_head(children: &Vec<Block>) -> Result<Vec<m::Node>> {
-    let mut nodes: Vec<m::Node> = vec![];
+fn from_head(children: &Vec<Block>) -> Result<String> {
+    let mut nodes = String::new();
 
     for node in children {
-        nodes.extend(from_node(node, 2)?);
+        nodes.push_str(&from_node(node, 2)?);
+        nodes.push('\n');
     }
 
     Ok(nodes)
 }
 
-fn from_body(children: &Vec<Section>) -> Result<Vec<m::Node>> {
-    let mut nodes: Vec<m::Node> = vec![];
+fn from_body(children: &Vec<Section>) -> Result<String> {
+    let mut nodes = String::new();
 
     for block in children {
-        nodes.push(heading(1, vec![text(&block.title)]));
+        nodes.push_str(&heading(1, &block.title));
+        nodes.push('\n');
         for node in &block.children {
-            nodes.extend(from_node(node, 2)?);
+            nodes.push_str(&from_node(node, 2)?);
         }
     }
 
     Ok(nodes)
 }
 
-fn from_node(node: &Block, depth: u8) -> Result<Vec<m::Node>> {
+fn from_node(node: &Block, depth: u8) -> Result<String> {
     match node {
-        Block::Empty => Ok(vec![]),
+        Block::Empty => Ok(String::from("")),
 
         Block::Section(Section { title, children }) => {
-            let mut res = vec![heading(depth, vec![text(title)])];
+            let mut res = heading(depth, title);
+            res.push('\n');
             for child in children {
-                res.extend(from_node(child, depth + 1)?);
+                res.push_str(&from_node(child, depth + 1)?);
+                res.push('\n');
             }
             Ok(res)
         },
 
         Block::Card(Card { kind, children }) => {
-            let mut res = vec![text(format!("[!{kind}]"))];
+            let mut res = format!("[!{kind}]\n");
             for child in children {
-                res.extend(from_node(child, depth + 1)?);
+                res.push_str(&from_node(child, depth + 1)?);
+                res.push('\n');
             }
-            Ok(vec![block_quote(res)])
+            Ok(block_quote(res))
         },
 
-        Block::Node(node) => Ok(vec![node.clone()]),
+        Block::Text(node) => Ok(node.clone()),
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use indoc::indoc;
     use pretty_assertions::assert_eq;
 
     use super::*;
 
     #[test]
-    fn metadata_to_node() -> Result<()> {
+    fn convert_metadata() -> Result<()> {
         assert_eq!(
             to_ast(&Note::new(
                 Some(Metadata {
@@ -87,57 +92,71 @@ mod tests {
                 vec![],
                 vec![]
             ))?,
-            root(vec![yaml("title: foo\n")])
+            indoc! {"
+                ---
+                title: foo
+                ---
+            "}
         );
         Ok(())
     }
 
     #[test]
-    fn head_text_to_node() -> Result<()> {
+    fn convert_head_text() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(None, vec![Block::Node(text("foo"))], vec![]))?,
-            root(vec![text("foo")]),
+            to_ast(&Note::new(None, vec![Block::text("foo")], vec![]))?,
+            indoc! {"
+                foo
+            "},
         );
         Ok(())
     }
 
     #[test]
-    fn head_heading_to_node() -> Result<()> {
+    fn convert_head_heading() -> Result<()> {
         assert_eq!(
             to_ast(&Note::new(
                 None,
-                vec![Block::section("heading", vec![Block::Node(text("foo"))])],
+                vec![Block::section("heading", vec![Block::text("foo")])],
                 vec![]
             ))?,
-            root(vec![heading(2, vec![text("heading")]), text("foo")])
+            indoc! {"
+                ## heading
+                foo
+            "}
         );
         Ok(())
     }
 
     #[test]
-    fn body_heading_to_node() -> Result<()> {
+    fn convert_body_heading() -> Result<()> {
         assert_eq!(
             to_ast(&Note::new(
                 None,
                 vec![],
-                vec![Section::new("heading", vec![Block::Node(text("foo"))])],
+                vec![Section::new("heading", vec![Block::text("foo")])],
             ))?,
-            root(vec![heading(1, vec![text("heading")]), text("foo")])
+            indoc! {"
+                # heading
+                foo
+            "}
         );
         Ok(())
     }
 
     #[test]
-    fn body_text_to_node() -> Result<()> {
+    fn convert_body_text() -> Result<()> {
         assert_eq!(
             to_ast(&Note::new(None, vec![], vec![Section::new("foo", vec![])]))?,
-            root(vec![heading(1, vec![text("foo")])])
+            indoc! {"
+                # foo
+            "}
         );
         Ok(())
     }
 
     #[test]
-    fn card_to_node() -> Result<()> {
+    fn convert_card() -> Result<()> {
         assert_eq!(
             to_ast(&Note::new(
                 None,
@@ -150,13 +169,17 @@ mod tests {
                 ],
                 vec![]
             ))?,
-            root(vec![
-                block_quote(vec![paragraph(vec![text("[!note]")])]),
-                block_quote(vec![paragraph(vec![text("[!note]")])]),
-                block_quote(vec![paragraph(vec![text("[!summary]")])]),
-                block_quote(vec![paragraph(vec![text("[!quote]")])]),
-                block_quote(vec![paragraph(vec![text("[!question]")])]),
-            ])
+            indoc! {"
+                > [!note]
+
+                > [!note]
+
+                > [!summary]
+
+                > [!quote]
+
+                > [!question]
+            "}
         );
         Ok(())
     }

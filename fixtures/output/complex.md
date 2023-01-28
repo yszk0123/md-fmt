@@ -2,7 +2,6 @@
 title: foo
 tags: english
 ---
-
 Hello, world!
 
 1. one
@@ -11,7 +10,6 @@ Hello, world!
 
 > [!note]
 > 88
->
 > - 1
 > - 2
 >

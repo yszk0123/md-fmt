@@ -8,5 +8,4 @@ compound-key:
   - bar
 unknown-key: unknown-value
 ---
-
 body

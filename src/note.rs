@@ -1,6 +1,7 @@
 mod from_ast;
 mod to_ast;
 
+pub mod builder;
 pub mod flexible_date_time;
 pub mod metadata;
 pub mod model;

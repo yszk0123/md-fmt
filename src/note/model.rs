@@ -1,5 +1,3 @@
-use markdown::mdast::Node;
-
 use crate::Metadata;
 
 #[derive(PartialEq, Debug, Default)]
@@ -33,7 +31,7 @@ pub enum Block {
     Empty,
     Section(Section),
     Card(Card),
-    Node(Node),
+    Text(String),
 }
 
 impl Block {
@@ -48,8 +46,8 @@ impl Block {
         })
     }
 
-    pub fn node(node: Node) -> Self {
-        Self::Node(node)
+    pub fn text(text: impl ToString) -> Self {
+        Self::Text(text.to_string())
     }
 }
 
