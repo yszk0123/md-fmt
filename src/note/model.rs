@@ -5,12 +5,12 @@ use crate::Metadata;
 #[derive(PartialEq, Debug, Default)]
 pub struct Note {
     pub metadata: Option<Metadata>,
-    pub head: Section,
-    pub body: Section,
+    pub head: Vec<Block>,
+    pub body: Vec<Section>,
 }
 
 impl Note {
-    pub fn new(metadata: Option<Metadata>, head: Section, body: Section) -> Self {
+    pub fn new(metadata: Option<Metadata>, head: Vec<Block>, body: Vec<Section>) -> Self {
         Self {
             metadata,
             head,
@@ -27,8 +27,9 @@ impl Note {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Default, Debug)]
 pub enum Block {
+    #[default]
     Empty,
     Section(Section),
     Card(Card),
@@ -42,7 +43,7 @@ impl Block {
 
     pub fn section(title: impl ToString, children: Vec<Block>) -> Self {
         Self::Section(Section {
-            title: Some(title.to_string()),
+            title: title.to_string(),
             children,
         })
     }
@@ -54,18 +55,14 @@ impl Block {
 
 #[derive(PartialEq, Debug, Default)]
 pub struct Section {
-    pub title: Option<String>,
+    pub title: String,
     pub children: Vec<Block>,
 }
 
 impl Section {
-    pub fn new(title: Option<String>, children: Vec<Block>) -> Self {
-        Self { title, children }
-    }
-
-    pub fn children(children: Vec<Block>) -> Self {
+    pub fn new(title: impl ToString, children: Vec<Block>) -> Self {
         Self {
-            title: None,
+            title: title.to_string(),
             children,
         }
     }

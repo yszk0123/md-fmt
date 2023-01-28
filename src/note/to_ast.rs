@@ -9,8 +9,8 @@ pub fn to_ast(note: &Note) -> Result<m::Node> {
     let mut children = vec![];
 
     children.extend(from_yaml(&note.metadata)?);
-    children.extend(from_block(&note.head, 2)?);
-    children.extend(from_block(&note.body, 1)?);
+    children.extend(from_head(&note.head)?);
+    children.extend(from_body(&note.body)?);
 
     Ok(root(children))
 }
@@ -23,15 +23,24 @@ fn from_yaml(metadata: &Option<Metadata>) -> Result<Vec<m::Node>> {
     }
 }
 
-fn from_block(block: &Section, depth: u8) -> Result<Vec<m::Node>> {
+fn from_head(children: &Vec<Block>) -> Result<Vec<m::Node>> {
     let mut nodes: Vec<m::Node> = vec![];
 
-    if let Some(title) = &block.title {
-        nodes.push(heading(depth, vec![text(title)]));
+    for node in children {
+        nodes.extend(from_node(node, 2)?);
     }
 
-    for node in &block.children {
-        nodes.extend(from_node(node, depth + 1)?);
+    Ok(nodes)
+}
+
+fn from_body(children: &Vec<Section>) -> Result<Vec<m::Node>> {
+    let mut nodes: Vec<m::Node> = vec![];
+
+    for block in children {
+        nodes.push(heading(1, vec![text(&block.title)]));
+        for node in &block.children {
+            nodes.extend(from_node(node, 2)?);
+        }
     }
 
     Ok(nodes)
@@ -41,27 +50,24 @@ fn from_node(node: &Block, depth: u8) -> Result<Vec<m::Node>> {
     match node {
         Block::Empty => Ok(vec![]),
 
-        Block::Section(block) => from_block(block, depth),
+        Block::Section(Section { title, children }) => {
+            let mut res = vec![heading(depth, vec![text(title)])];
+            for child in children {
+                res.extend(from_node(child, depth + 1)?);
+            }
+            Ok(res)
+        },
 
         Block::Card(Card { kind, children }) => {
-            let children = concat(children.iter().map(|v| from_node(v, depth + 1)).collect())?;
-            let children = Some(text(format!("[!{kind}]")))
-                .into_iter()
-                .chain(children)
-                .collect();
-            Ok(vec![block_quote(children)])
+            let mut res = vec![text(format!("[!{kind}]"))];
+            for child in children {
+                res.extend(from_node(child, depth + 1)?);
+            }
+            Ok(vec![block_quote(res)])
         },
 
         Block::Node(node) => Ok(vec![node.clone()]),
     }
-}
-
-fn concat<T>(nodes_list: Vec<Result<Vec<T>>>) -> Result<Vec<T>> {
-    let mut result: Vec<T> = vec![];
-    for nodes in nodes_list {
-        result.extend(nodes?);
-    }
-    Ok(result)
 }
 
 #[cfg(test)]
@@ -76,8 +82,8 @@ mod tests {
                     title: Some("foo".into()),
                     ..Default::default()
                 }),
-                Section::default(),
-                Section::default(),
+                vec![],
+                vec![]
             ))?,
             root(vec![yaml("title: foo\n")])
         );
@@ -87,11 +93,7 @@ mod tests {
     #[test]
     fn head_text_to_node() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(
-                None,
-                Section::new(None, vec![Block::Node(text("foo"))]),
-                Section::default(),
-            ))?,
+            to_ast(&Note::new(None, vec![Block::Node(text("foo"))], vec![]))?,
             root(vec![text("foo")]),
         );
         Ok(())
@@ -102,8 +104,8 @@ mod tests {
         assert_eq!(
             to_ast(&Note::new(
                 None,
-                Section::new(Some("heading".into()), vec![Block::Node(text("foo"))]),
-                Section::default(),
+                vec![Block::section("heading", vec![Block::Node(text("foo"))])],
+                vec![]
             ))?,
             root(vec![heading(2, vec![text("heading")]), text("foo")])
         );
@@ -115,8 +117,8 @@ mod tests {
         assert_eq!(
             to_ast(&Note::new(
                 None,
-                Section::default(),
-                Section::new(Some("heading".into()), vec![Block::Node(text("foo"))]),
+                vec![],
+                vec![Section::new("heading", vec![Block::Node(text("foo"))])],
             ))?,
             root(vec![heading(1, vec![text("heading")]), text("foo")])
         );
@@ -126,12 +128,8 @@ mod tests {
     #[test]
     fn body_text_to_node() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(
-                None,
-                Section::default(),
-                Section::new(None, vec![Block::Node(text("foo"))]),
-            ))?,
-            root(vec![text("foo")])
+            to_ast(&Note::new(None, vec![], vec![Section::new("foo", vec![])]))?,
+            root(vec![heading(1, vec![text("foo")])])
         );
         Ok(())
     }

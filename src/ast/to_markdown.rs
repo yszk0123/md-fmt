@@ -44,7 +44,7 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
         Node::Heading(node) => {
             let s = map_children(&node.children, context, None)?;
             let d: usize = node.depth.into();
-            Ok(format!("{} {}", "#".repeat(d - 1), s))
+            Ok(format!("{} {}", "#".repeat(d), s))
         },
         Node::Code(node) => {
             let lang = node.lang.clone().unwrap_or_else(|| "".into());
