@@ -1,7 +1,7 @@
 #![allow(unstable_name_collisions)]
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use markdown::mdast::Node;
+use markdown::mdast::{Image, Node};
 
 const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
@@ -102,6 +102,7 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
         Node::Yaml(node) => Ok(format!("---\n{}---\n", node.value)),
         Node::InlineCode(node) => Ok(format!("`{}`", node.value)),
         Node::ThematicBreak(_) => Ok("---\n".to_owned()),
+        Node::Image(Image { alt, url, .. }) => Ok(format!("![{alt}]({url})")),
 
         node => Err(anyhow!("{:?} not supported syntax", node)),
     }
