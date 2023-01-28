@@ -38,7 +38,7 @@ impl Parser {
     }
 
     fn parse_head(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Vec<Block>> {
-        self.parse_block(iter, 2)
+        self.parse_block(iter, 1)
     }
 
     fn parse_body(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Vec<Section>> {
@@ -65,9 +65,7 @@ impl Parser {
         let mut res: Vec<Block> = vec![];
         while let Some(node) = iter.peek() {
             match *node {
-                m::Node::Heading(m::Heading { depth, .. })
-                    if min_depth >= 2 && *depth < min_depth =>
-                {
+                m::Node::Heading(m::Heading { depth, .. }) if *depth <= min_depth => {
                     break;
                 },
                 m::Node::Heading(node) => {
@@ -120,6 +118,8 @@ pub fn from_ast(node: &m::Node) -> Result<Note> {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
+
     use super::*;
     use crate::ast::builder::*;
 
@@ -167,6 +167,27 @@ mod tests {
                 None,
                 vec![],
                 vec![Section::new("foo", vec![Block::section("bar", vec![])])]
+            ),
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn heading_1_2_1_2_to_note() -> Result<()> {
+        assert_eq!(
+            from_ast(&root(vec![
+                heading(1, vec![text("aaa")]),
+                heading(2, vec![text("bbb")]),
+                heading(1, vec![text("ccc")]),
+                heading(2, vec![text("ddd")])
+            ]))?,
+            Note::new(
+                None,
+                vec![],
+                vec![
+                    Section::new("aaa", vec![Block::section("bbb", vec![])]),
+                    Section::new("ccc", vec![Block::section("ddd", vec![])])
+                ]
             ),
         );
         Ok(())
