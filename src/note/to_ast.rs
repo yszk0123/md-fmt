@@ -135,4 +135,29 @@ mod tests {
         );
         Ok(())
     }
+
+    #[test]
+    fn card_to_node() -> Result<()> {
+        assert_eq!(
+            to_ast(&Note::new(
+                None,
+                vec![
+                    Block::card(NoteKind::default(), vec![]),
+                    Block::card(NoteKind::Note, vec![]),
+                    Block::card(NoteKind::Summary, vec![]),
+                    Block::card(NoteKind::Quote, vec![]),
+                    Block::card(NoteKind::Question, vec![]),
+                ],
+                vec![]
+            ))?,
+            root(vec![
+                block_quote(vec![paragraph(vec![text("[!note]")])]),
+                block_quote(vec![paragraph(vec![text("[!note]")])]),
+                block_quote(vec![paragraph(vec![text("[!summary]")])]),
+                block_quote(vec![paragraph(vec![text("[!quote]")])]),
+                block_quote(vec![paragraph(vec![text("[!question]")])]),
+            ])
+        );
+        Ok(())
+    }
 }

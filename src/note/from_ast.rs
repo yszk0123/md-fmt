@@ -2,7 +2,7 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 use anyhow::{anyhow, Result};
-use markdown::mdast as m;
+use markdown::mdast::{self as m, Paragraph};
 
 use crate::note::model::*;
 use crate::Metadata;
@@ -89,14 +89,39 @@ impl Parser {
     }
 
     fn parse_block_quote(&self, block_quote: &m::BlockQuote) -> Block {
-        Block::card(
-            NoteKind::default(),
-            block_quote
-                .children
-                .iter()
-                .map(|node| Block::Node(node.clone()))
-                .collect(),
-        )
+        let mut iter = block_quote.children.iter().peekable();
+
+        let kind = if let Some(m::Node::Paragraph(Paragraph { children, .. })) =
+            block_quote.children.first()
+        {
+            if let Some(m::Node::Text(m::Text { value, .. })) = children.first() {
+                match &value[..] {
+                    "[!note]" => {
+                        iter.next();
+                        NoteKind::Note
+                    },
+                    "[!question]" => {
+                        iter.next();
+                        NoteKind::Question
+                    },
+                    "[!quote]" => {
+                        iter.next();
+                        NoteKind::Quote
+                    },
+                    "[!summary]" => {
+                        iter.next();
+                        NoteKind::Summary
+                    },
+                    _ => NoteKind::Note,
+                }
+            } else {
+                NoteKind::Note
+            }
+        } else {
+            NoteKind::Note
+        };
+
+        Block::card(kind, iter.map(|node| Block::Node(node.clone())).collect())
     }
 
     fn parse_heading(&self, heading: &m::Heading) -> String {
@@ -212,15 +237,64 @@ mod tests {
     #[test]
     fn block_quote_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![block_quote(vec![text("foo")])]))?,
+            from_ast(&root(vec![
+                block_quote(vec![text("foo")]),
+                block_quote(vec![text("[!note]")]),
+                block_quote(vec![text("[!summary]")]),
+                block_quote(vec![text("[!quote]")]),
+                block_quote(vec![text("[!question]")]),
+            ]))?,
             Note::new(
                 None,
-                vec![Block::card(
-                    NoteKind::default(),
-                    vec![Block::Node(text("foo"))]
-                )],
+                vec![
+                    Block::card(NoteKind::Note, vec![Block::Node(text("foo"))]),
+                    Block::card(NoteKind::Note, vec![]),
+                    Block::card(NoteKind::Summary, vec![]),
+                    Block::card(NoteKind::Quote, vec![]),
+                    Block::card(NoteKind::Question, vec![]),
+                ],
                 vec![]
-            ),
+            )
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn block_quote_paragraph_to_note() -> Result<()> {
+        assert_eq!(
+            from_ast(&root(vec![
+                block_quote(vec![paragraph(vec![text("foo")])]),
+                block_quote(vec![paragraph(vec![text("[!note]"), text("foo")])]),
+                block_quote(vec![paragraph(vec![text("[!summary]"), text("foo")])]),
+                block_quote(vec![paragraph(vec![text("[!quote]"), text("foo")])]),
+                block_quote(vec![paragraph(vec![text("[!question]"), text("foo")])]),
+            ]))?,
+            Note::new(
+                None,
+                vec![
+                    Block::card(
+                        NoteKind::Note,
+                        vec![Block::Node(paragraph(vec![text("foo")]))]
+                    ),
+                    Block::card(
+                        NoteKind::Note,
+                        vec![Block::Node(paragraph(vec![text("foo")]))]
+                    ),
+                    Block::card(
+                        NoteKind::Summary,
+                        vec![Block::Node(paragraph(vec![text("foo")]))]
+                    ),
+                    Block::card(
+                        NoteKind::Quote,
+                        vec![Block::Node(paragraph(vec![text("foo")]))]
+                    ),
+                    Block::card(
+                        NoteKind::Question,
+                        vec![Block::Node(paragraph(vec![text("foo")]))]
+                    ),
+                ],
+                vec![]
+            )
         );
         Ok(())
     }
