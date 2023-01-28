@@ -1,7 +1,7 @@
 #![allow(unstable_name_collisions)]
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use markdown::mdast::{Image, Node};
+use markdown::mdast::{Image, Link, Node};
 
 const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
@@ -96,6 +96,10 @@ fn to_md(node: &Node, context: &mut Context) -> Result<String> {
             Ok(format!("**{s}**"))
         },
         Node::Break(_) => Ok("\n".into()),
+        Node::Link(Link { children, url, .. }) => {
+            let text = map_children(children, context, None)?;
+            Ok(format!("[{text}]({url})"))
+        },
 
         // Literal
         Node::Text(text) => Ok(text.value.to_owned()),
