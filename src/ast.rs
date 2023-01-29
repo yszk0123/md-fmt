@@ -1,3 +1,4 @@
 pub mod builder;
 pub mod pretty;
-pub mod to_markdown;
+pub mod printer;
+pub use printer::AstPrinter;

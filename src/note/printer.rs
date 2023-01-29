@@ -4,10 +4,10 @@ use crate::note::builder::*;
 use crate::note::metadata::Metadata;
 use crate::note::model::*;
 
-pub struct Printer {}
+pub struct NotePrinter {}
 
-impl Printer {
-    pub fn to_markdown(note: &Note) -> Result<String> {
+impl NotePrinter {
+    pub fn print(note: &Note) -> Result<String> {
         let mut children = String::new();
 
         children.push_str(&from_yaml(&note.metadata)?);
@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn convert_metadata() -> Result<()> {
         assert_eq!(
-            Printer::to_markdown(&Note::new(
+            NotePrinter::print(&Note::new(
                 Some(Metadata {
                     title: Some("foo".into()),
                     ..Default::default()
@@ -108,7 +108,7 @@ mod tests {
     #[test]
     fn convert_head_text() -> Result<()> {
         assert_eq!(
-            Printer::to_markdown(&Note::new(None, vec![Block::text("foo")], vec![]))?,
+            NotePrinter::print(&Note::new(None, vec![Block::text("foo")], vec![]))?,
             indoc! {"
                 foo
             "},
@@ -119,7 +119,7 @@ mod tests {
     #[test]
     fn convert_head_heading() -> Result<()> {
         assert_eq!(
-            Printer::to_markdown(&Note::new(
+            NotePrinter::print(&Note::new(
                 None,
                 vec![Block::section("heading", vec![Block::text("foo")])],
                 vec![]
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn convert_body_heading() -> Result<()> {
         assert_eq!(
-            Printer::to_markdown(&Note::new(
+            NotePrinter::print(&Note::new(
                 None,
                 vec![],
                 vec![Section::new("heading", vec![Block::text("foo")])],
@@ -151,7 +151,7 @@ mod tests {
     #[test]
     fn convert_body_text() -> Result<()> {
         assert_eq!(
-            Printer::to_markdown(&Note::new(None, vec![], vec![Section::new("foo", vec![])]))?,
+            NotePrinter::print(&Note::new(None, vec![], vec![Section::new("foo", vec![])]))?,
             indoc! {"
                 # foo
             "}
@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn convert_card() -> Result<()> {
         assert_eq!(
-            Printer::to_markdown(&Note::new(
+            NotePrinter::print(&Note::new(
                 None,
                 vec![
                     Block::card(NoteKind::default(), vec![]),

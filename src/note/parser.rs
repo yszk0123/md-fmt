@@ -4,18 +4,19 @@ use std::slice::Iter;
 use anyhow::{anyhow, Ok, Result};
 use markdown::mdast::{self as m, Paragraph};
 
+use crate::ast;
 use crate::note::model::*;
-use crate::{to_markdown, Metadata};
+use crate::Metadata;
 
-pub struct Parser {}
+pub struct NoteParser {}
 
-impl Parser {
-    pub fn from_ast(node: &m::Node) -> Result<Note> {
+impl NoteParser {
+    pub fn parse(node: &m::Node) -> Result<Note> {
         let parser = Self {};
-        parser.parse(node)
+        parser.parse_root(node)
     }
 
-    fn parse(&self, node: &m::Node) -> Result<Note> {
+    fn parse_root(&self, node: &m::Node) -> Result<Note> {
         match node {
             m::Node::Root(node) => {
                 let mut iter = node.children.iter().peekable();
@@ -85,7 +86,7 @@ impl Parser {
                 },
                 node => {
                     iter.next();
-                    let s = to_markdown(node)?;
+                    let s = ast::AstPrinter::print(node)?;
                     res.push(Block::Text(s));
                 },
             }
@@ -103,8 +104,8 @@ impl Parser {
         let r = node
             .into_iter()
             .chain(children)
-            .map(to_markdown)
-            .chain(rest.iter().map(to_markdown))
+            .map(ast::AstPrinter::print)
+            .chain(rest.iter().map(ast::AstPrinter::print))
             .collect::<Result<Vec<String>>>()?
             .join("\n");
 
@@ -157,14 +158,14 @@ mod tests {
 
     #[test]
     fn text_to_invalid() {
-        let err = Parser::from_ast(&text("foo")).unwrap_err();
+        let err = NoteParser::parse(&text("foo")).unwrap_err();
         assert_eq!(format!("{err}"), "invalid");
     }
 
     #[test]
     fn text_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![text("foo")]))?,
+            NoteParser::parse(&root(vec![text("foo")]))?,
             Note::new(None, vec![Block::text("foo")], vec![]),
         );
         Ok(())
@@ -173,7 +174,7 @@ mod tests {
     #[test]
     fn heading_2_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![heading(2, vec![text("foo")])]))?,
+            NoteParser::parse(&root(vec![heading(2, vec![text("foo")])]))?,
             Note::new(None, vec![Block::section("foo", vec![])], vec![]),
         );
         Ok(())
@@ -182,7 +183,7 @@ mod tests {
     #[test]
     fn heading_1_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![heading(1, vec![text("foo")])]))?,
+            NoteParser::parse(&root(vec![heading(1, vec![text("foo")])]))?,
             Note::new(None, vec![], vec![Section::new("foo", vec![])]),
         );
         Ok(())
@@ -191,7 +192,7 @@ mod tests {
     #[test]
     fn heading_1_2_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![
+            NoteParser::parse(&root(vec![
                 heading(1, vec![text("foo")]),
                 heading(2, vec![text("bar")])
             ]))?,
@@ -207,7 +208,7 @@ mod tests {
     #[test]
     fn heading_1_2_1_2_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![
+            NoteParser::parse(&root(vec![
                 heading(1, vec![text("aaa")]),
                 heading(2, vec![text("bbb")]),
                 heading(1, vec![text("ccc")]),
@@ -228,7 +229,7 @@ mod tests {
     #[test]
     fn heading_2_1_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![
+            NoteParser::parse(&root(vec![
                 heading(2, vec![text("foo")]),
                 heading(1, vec![text("bar")]),
             ]))?,
@@ -244,7 +245,7 @@ mod tests {
     #[test]
     fn block_quote_paragraph_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![
+            NoteParser::parse(&root(vec![
                 block_quote(vec![paragraph(vec![text("foo")])]),
                 block_quote(vec![paragraph(vec![text("[!note]"), text("foo")])]),
                 block_quote(vec![paragraph(vec![text("[!summary]"), text("foo")])]),
@@ -269,7 +270,7 @@ mod tests {
     #[test]
     fn yaml_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![yaml("title: foo")]))?,
+            NoteParser::parse(&root(vec![yaml("title: foo")]))?,
             Note::new(
                 Some(Metadata {
                     title: Some("foo".into()),
@@ -285,7 +286,7 @@ mod tests {
     #[test]
     fn root_to_note() -> Result<()> {
         assert_eq!(
-            Parser::from_ast(&root(vec![text("foo")]))?,
+            NoteParser::parse(&root(vec![text("foo")]))?,
             Note::new(None, vec![Block::text("foo")], vec![])
         );
         Ok(())
