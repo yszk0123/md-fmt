@@ -7,9 +7,14 @@ use markdown::mdast::{self as m, Paragraph};
 use crate::note::model::*;
 use crate::{to_markdown, Metadata};
 
-struct Parser {}
+pub struct Parser {}
 
 impl Parser {
+    pub fn from_ast(node: &m::Node) -> Result<Note> {
+        let parser = Self {};
+        parser.parse(node)
+    }
+
     fn parse(&self, node: &m::Node) -> Result<Note> {
         match node {
             m::Node::Root(node) => {
@@ -143,11 +148,6 @@ impl Parser {
     }
 }
 
-pub fn from_ast(node: &m::Node) -> Result<Note> {
-    let parser = Parser {};
-    parser.parse(node)
-}
-
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
@@ -157,14 +157,14 @@ mod tests {
 
     #[test]
     fn text_to_invalid() {
-        let err = from_ast(&text("foo")).unwrap_err();
+        let err = Parser::from_ast(&text("foo")).unwrap_err();
         assert_eq!(format!("{err}"), "invalid");
     }
 
     #[test]
     fn text_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![text("foo")]))?,
+            Parser::from_ast(&root(vec![text("foo")]))?,
             Note::new(None, vec![Block::text("foo")], vec![]),
         );
         Ok(())
@@ -173,7 +173,7 @@ mod tests {
     #[test]
     fn heading_2_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![heading(2, vec![text("foo")])]))?,
+            Parser::from_ast(&root(vec![heading(2, vec![text("foo")])]))?,
             Note::new(None, vec![Block::section("foo", vec![])], vec![]),
         );
         Ok(())
@@ -182,7 +182,7 @@ mod tests {
     #[test]
     fn heading_1_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![heading(1, vec![text("foo")])]))?,
+            Parser::from_ast(&root(vec![heading(1, vec![text("foo")])]))?,
             Note::new(None, vec![], vec![Section::new("foo", vec![])]),
         );
         Ok(())
@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn heading_1_2_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![
+            Parser::from_ast(&root(vec![
                 heading(1, vec![text("foo")]),
                 heading(2, vec![text("bar")])
             ]))?,
@@ -207,7 +207,7 @@ mod tests {
     #[test]
     fn heading_1_2_1_2_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![
+            Parser::from_ast(&root(vec![
                 heading(1, vec![text("aaa")]),
                 heading(2, vec![text("bbb")]),
                 heading(1, vec![text("ccc")]),
@@ -228,7 +228,7 @@ mod tests {
     #[test]
     fn heading_2_1_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![
+            Parser::from_ast(&root(vec![
                 heading(2, vec![text("foo")]),
                 heading(1, vec![text("bar")]),
             ]))?,
@@ -244,7 +244,7 @@ mod tests {
     #[test]
     fn block_quote_paragraph_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![
+            Parser::from_ast(&root(vec![
                 block_quote(vec![paragraph(vec![text("foo")])]),
                 block_quote(vec![paragraph(vec![text("[!note]"), text("foo")])]),
                 block_quote(vec![paragraph(vec![text("[!summary]"), text("foo")])]),
@@ -269,7 +269,7 @@ mod tests {
     #[test]
     fn yaml_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![yaml("title: foo")]))?,
+            Parser::from_ast(&root(vec![yaml("title: foo")]))?,
             Note::new(
                 Some(Metadata {
                     title: Some("foo".into()),
@@ -285,7 +285,7 @@ mod tests {
     #[test]
     fn root_to_note() -> Result<()> {
         assert_eq!(
-            from_ast(&root(vec![text("foo")]))?,
+            Parser::from_ast(&root(vec![text("foo")]))?,
             Note::new(None, vec![Block::text("foo")], vec![])
         );
         Ok(())

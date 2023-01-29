@@ -7,13 +7,14 @@ use std::fs;
 use anyhow::{anyhow, Context, Result};
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
+use note::Printer;
 
 pub use crate::ast::builder;
 pub use crate::ast::pretty::pretty;
 pub use crate::ast::to_markdown::to_markdown;
 use crate::cli::config::Config;
 use crate::note::metadata::Metadata;
-pub use crate::note::{from_ast, to_ast};
+pub use crate::note::Parser;
 
 pub fn to_mdast_from_str(s: &str) -> Result<Node> {
     to_mdast(
@@ -30,9 +31,9 @@ pub fn to_mdast_from_str(s: &str) -> Result<Node> {
 }
 
 pub fn format(node: &Node) -> Result<String> {
-    let note = from_ast(node)?;
+    let note = Parser::from_ast(node)?;
     let note = note.normalize();
-    to_ast(&note)
+    Printer::to_markdown(&note)
 }
 
 pub fn run(config: Config) -> Result<()> {
@@ -50,7 +51,7 @@ pub fn run(config: Config) -> Result<()> {
         }
 
         if config.note {
-            let note = from_ast(&node)?;
+            let note = Parser::from_ast(&node)?;
             println!("{note:?}");
             return Ok(());
         }

@@ -4,14 +4,18 @@ use crate::note::builder::*;
 use crate::note::metadata::Metadata;
 use crate::note::model::*;
 
-pub fn to_ast(note: &Note) -> Result<String> {
-    let mut children = String::new();
+pub struct Printer {}
 
-    children.push_str(&from_yaml(&note.metadata)?);
-    children.push_str(&from_head(&note.head)?);
-    children.push_str(&from_body(&note.body)?);
+impl Printer {
+    pub fn to_markdown(note: &Note) -> Result<String> {
+        let mut children = String::new();
 
-    Ok(children.trim().to_string() + "\n")
+        children.push_str(&from_yaml(&note.metadata)?);
+        children.push_str(&from_head(&note.head)?);
+        children.push_str(&from_body(&note.body)?);
+
+        Ok(children.trim().to_string() + "\n")
+    }
 }
 
 fn from_yaml(metadata: &Option<Metadata>) -> Result<String> {
@@ -84,7 +88,7 @@ mod tests {
     #[test]
     fn convert_metadata() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(
+            Printer::to_markdown(&Note::new(
                 Some(Metadata {
                     title: Some("foo".into()),
                     ..Default::default()
@@ -104,7 +108,7 @@ mod tests {
     #[test]
     fn convert_head_text() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(None, vec![Block::text("foo")], vec![]))?,
+            Printer::to_markdown(&Note::new(None, vec![Block::text("foo")], vec![]))?,
             indoc! {"
                 foo
             "},
@@ -115,7 +119,7 @@ mod tests {
     #[test]
     fn convert_head_heading() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(
+            Printer::to_markdown(&Note::new(
                 None,
                 vec![Block::section("heading", vec![Block::text("foo")])],
                 vec![]
@@ -131,7 +135,7 @@ mod tests {
     #[test]
     fn convert_body_heading() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(
+            Printer::to_markdown(&Note::new(
                 None,
                 vec![],
                 vec![Section::new("heading", vec![Block::text("foo")])],
@@ -147,7 +151,7 @@ mod tests {
     #[test]
     fn convert_body_text() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(None, vec![], vec![Section::new("foo", vec![])]))?,
+            Printer::to_markdown(&Note::new(None, vec![], vec![Section::new("foo", vec![])]))?,
             indoc! {"
                 # foo
             "}
@@ -158,7 +162,7 @@ mod tests {
     #[test]
     fn convert_card() -> Result<()> {
         assert_eq!(
-            to_ast(&Note::new(
+            Printer::to_markdown(&Note::new(
                 None,
                 vec![
                     Block::card(NoteKind::default(), vec![]),
