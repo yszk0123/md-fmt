@@ -35,3 +35,10 @@ pub fn text(value: impl ToString) -> Node {
         position: None,
     })
 }
+
+pub fn paragraph(children: Vec<Node>) -> Node {
+    Node::Paragraph(Paragraph {
+        children,
+        position: None,
+    })
+}

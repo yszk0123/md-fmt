@@ -2,6 +2,7 @@ use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
 use mdfmt::{format, to_mdast_from_str};
+use pretty_assertions::assert_eq;
 
 #[test]
 fn markdown() -> Result<()> {
@@ -23,8 +24,8 @@ fn markdown() -> Result<()> {
             })?;
 
             assert_eq!(
-                expected,
                 actual,
+                expected,
                 "test \"{}\" does not match",
                 output_path.display()
             );

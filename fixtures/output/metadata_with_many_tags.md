@@ -1,8 +1,8 @@
 ---
 title: foo
-bookmark: {}
-journalDate: "2000-01-01T00:00:00Z"
-tags: one
+tags:
+  - one
+  - two
 compound-key:
   - foo
   - bar
