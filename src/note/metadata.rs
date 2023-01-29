@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
 use yaml_rust::{YamlEmitter, YamlLoader};
 
+use super::model::NoteKind;
 use crate::note::flexible_date_time::FlexibleDateTime;
 
 #[serde_as]
@@ -19,8 +20,20 @@ pub struct Metadata {
     pub bookmark: Option<Bookmark>,
     pub link: Option<String>,
 
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub status: Option<NoteStatus>,
+
+    #[serde_as(as = "Option<DisplayFromStr>")]
+    pub kind: Option<NoteKind>,
+
     #[serde_as(as = "Option<FlexibleDateTime>")]
     pub journal_date: Option<DateTime<Utc>>,
+
+    #[serde_as(as = "Option<FlexibleDateTime>")]
+    pub created_at: Option<DateTime<Utc>>,
+
+    #[serde_as(as = "Option<FlexibleDateTime>")]
+    pub updated_at: Option<DateTime<Utc>>,
 
     #[serde_as(as = "Option<OneOrMany<_>>")]
     pub author: Option<Vec<String>>,
@@ -41,8 +54,18 @@ pub struct Bookmark {
     pub id: Option<BookmarkId>,
     pub image: Option<String>,
 
+    title: Option<String>,
+
+    toc: Option<String>,
+
     #[serde_as(as = "Option<FlexibleDateTime>")]
     journal_date: Option<DateTime<Utc>>,
+
+    #[serde_as(as = "Option<FlexibleDateTime>")]
+    created_at: Option<DateTime<Utc>>,
+
+    #[serde_as(as = "Option<FlexibleDateTime>")]
+    updated_at: Option<DateTime<Utc>>,
 
     url: Option<String>,
 
@@ -80,15 +103,17 @@ impl Metadata {
         let bookmark = self.bookmark.as_ref();
 
         Self {
-            title: self.title,
+            title: self.title.or_else(|| bookmark?.title.clone()),
             description: self.description,
             path: self.path,
             author: self.author,
             tags: self.tags,
-            journal_date: bookmark
-                .map(|v| v.journal_date)
-                .unwrap_or_else(|| self.journal_date),
-            link: bookmark.map(|v| v.url.clone()).unwrap_or_else(|| self.link),
+            status: self.status,
+            kind: self.kind,
+            journal_date: self.journal_date.or_else(|| bookmark?.journal_date),
+            created_at: self.created_at.or_else(|| bookmark?.created_at),
+            updated_at: self.updated_at.or_else(|| bookmark?.updated_at),
+            link: self.link.or_else(|| bookmark?.url.clone()),
             bookmark: self.bookmark.map(|v| v.normalize()),
             others: self.others,
         }
@@ -102,7 +127,48 @@ impl Bookmark {
             image: self.image,
             journal_date: None,
             url: None,
+            created_at: None,
+            updated_at: None,
+            title: None,
+            toc: None,
             others: self.others,
+        }
+    }
+}
+
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize)]
+pub enum NoteStatus {
+    #[default]
+    Todo,
+    InProgress,
+    Done,
+    NotPlanned,
+    Archived,
+}
+
+impl std::fmt::Display for NoteStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Self::Todo => write!(f, "todo"),
+            Self::InProgress => write!(f, "in progress"),
+            Self::Done => write!(f, "done"),
+            Self::NotPlanned => write!(f, "not planned"),
+            Self::Archived => write!(f, "archived"),
+        }
+    }
+}
+
+impl std::str::FromStr for NoteStatus {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "todo" => Ok(Self::Todo),
+            "in progress" => Ok(Self::InProgress),
+            "done" => Ok(Self::Done),
+            "not planned" => Ok(Self::NotPlanned),
+            "archived" => Ok(Self::Archived),
+            _ => Ok(Self::Todo),
         }
     }
 }
@@ -110,11 +176,36 @@ impl Bookmark {
 #[cfg(test)]
 mod tests {
     use chrono::TimeZone;
+    use pretty_assertions::assert_eq;
+    use serde_json::json;
 
     use super::*;
 
     #[test]
-    fn metadata_normalize_link() {
+    fn normalize_title() {
+        let metadata = Metadata {
+            title: None,
+            bookmark: Some(Bookmark {
+                title: Some("foo".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        assert_eq!(
+            metadata.normalize(),
+            Metadata {
+                title: Some("foo".into()),
+                bookmark: Some(Bookmark {
+                    title: None,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }
+        );
+    }
+
+    #[test]
+    fn normalize_link() {
         let metadata = Metadata {
             link: None,
             bookmark: Some(Bookmark {
@@ -137,7 +228,7 @@ mod tests {
     }
 
     #[test]
-    fn metadata_normalize_journal_date() {
+    fn normalize_journal_date() {
         let metadata = Metadata {
             journal_date: None,
             bookmark: Some(Bookmark {
@@ -157,5 +248,37 @@ mod tests {
                 ..Default::default()
             }
         );
+    }
+
+    #[test]
+    fn serialize() -> Result<()> {
+        assert_eq!(
+            serde_json::to_value(&Metadata {
+                kind: Some(NoteKind::Quote),
+                status: Some(NoteStatus::InProgress),
+                ..Default::default()
+            })?,
+            json!({
+                "kind": "quote",
+                "status": "in progress"
+            })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn deserialize() -> Result<()> {
+        assert_eq!(
+            serde_json::from_value::<Metadata>(json!({
+                "kind": "quote",
+                "status": "in progress"
+            }))?,
+            Metadata {
+                kind: Some(NoteKind::Quote),
+                status: Some(NoteStatus::InProgress),
+                ..Default::default()
+            }
+        );
+        Ok(())
     }
 }

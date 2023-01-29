@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use crate::Metadata;
 
 #[derive(PartialEq, Debug, Default)]
@@ -35,15 +37,15 @@ pub enum Block {
 }
 
 impl Block {
-    pub fn card(kind: NoteKind, children: Vec<Block>) -> Self {
-        Self::Card(Card { kind, children })
-    }
-
     pub fn section(title: impl ToString, children: Vec<Block>) -> Self {
         Self::Section(Section {
             title: title.to_string(),
             children,
         })
+    }
+
+    pub fn card(kind: NoteKind, children: Vec<Block>) -> Self {
+        Self::Card(Card { kind, children })
     }
 
     pub fn text(text: impl ToString) -> Self {
@@ -72,7 +74,7 @@ pub struct Card {
     pub children: Vec<Block>,
 }
 
-#[derive(PartialEq, Debug, Default)]
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize)]
 pub enum NoteKind {
     #[default]
     Note,
@@ -88,6 +90,20 @@ impl std::fmt::Display for NoteKind {
             Self::Summary => write!(f, "summary"),
             Self::Quote => write!(f, "quote"),
             Self::Question => write!(f, "question"),
+        }
+    }
+}
+
+impl std::str::FromStr for NoteKind {
+    type Err = std::convert::Infallible;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "note" => Ok(Self::Note),
+            "summary" => Ok(Self::Summary),
+            "quote" => Ok(Self::Quote),
+            "question" => Ok(Self::Question),
+            _ => Ok(Self::Note),
         }
     }
 }
