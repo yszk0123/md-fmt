@@ -3,6 +3,9 @@ use anyhow::Result;
 use crate::note::builder::*;
 use crate::note::metadata::Metadata;
 use crate::note::model::*;
+use crate::toc::FlattenNode;
+
+const INDENT: &str = "    ";
 
 pub struct NotePrinter {}
 
@@ -75,6 +78,18 @@ fn from_node(node: &Block, depth: u8) -> Result<String> {
         },
 
         Block::Text(node) => Ok(node.clone()),
+
+        Block::Toc(nodes) => {
+            let s = nodes
+                .iter()
+                .map(|FlattenNode(indent, value)| {
+                    format!("> {}- {}", INDENT.repeat(indent - 1), value)
+                })
+                .collect::<Vec<String>>()
+                .join("\n");
+
+            Ok(format!("> [!toc]\n{s}\n"))
+        },
     }
 }
 
@@ -84,6 +99,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
+    use crate::note::metadata::Bookmark;
 
     #[test]
     fn convert_metadata() -> Result<()> {
@@ -100,6 +116,31 @@ mod tests {
                 ---
                 title: foo
                 ---
+            "}
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn convert_toc() -> Result<()> {
+        let note = Note::new(
+            Some(Metadata {
+                bookmark: Some(Bookmark::toc(indoc! {"
+                    # aaa
+                    ## bbb
+                "})),
+                ..Default::default()
+            }),
+            vec![],
+            vec![],
+        )
+        .normalize()?;
+        assert_eq!(
+            NotePrinter::print(&note)?,
+            indoc! {"
+                > [!toc]
+                > - aaa
+                >     - bbb
             "}
         );
         Ok(())

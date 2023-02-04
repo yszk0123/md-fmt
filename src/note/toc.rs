@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 #[derive(PartialEq, Serialize, Deserialize, Debug)]
-pub struct Toc(Vec<Node>);
+pub struct Toc(pub Vec<Node>);
 
 #[serde_as]
 #[derive(PartialEq, Serialize, Deserialize, Debug)]
@@ -16,7 +16,7 @@ pub struct Node {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct FlattenNode(usize, String);
+pub struct FlattenNode(pub usize, pub String);
 
 impl Node {
     pub fn flatten(self) -> Vec<FlattenNode> {
@@ -30,6 +30,20 @@ impl Node {
 
         for child in self.children.into_iter() {
             child.flatten_inner(indent + 1, values);
+        }
+    }
+
+    pub fn flatten_ref(&self) -> Vec<FlattenNode> {
+        let mut values: Vec<FlattenNode> = vec![];
+        self.flatten_inner_ref(1, &mut values);
+        values
+    }
+
+    fn flatten_inner_ref(&self, indent: usize, values: &mut Vec<FlattenNode>) {
+        values.push(FlattenNode(indent, self.value.clone()));
+
+        for child in self.children.iter() {
+            child.flatten_inner_ref(indent + 1, values);
         }
     }
 }

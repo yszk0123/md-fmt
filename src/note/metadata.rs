@@ -7,7 +7,7 @@ use serde_with::{serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
 use yaml_rust::{YamlEmitter, YamlLoader};
 
 use super::model::NoteKind;
-use crate::note::flexible_date_time::FlexibleDateTime;
+use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
 
 #[serde_as]
 #[skip_serializing_none]
@@ -99,10 +99,10 @@ impl Metadata {
         out_str[4..].to_string() + "\n"
     }
 
-    pub fn normalize(self) -> Self {
+    pub fn normalize(self) -> Option<Self> {
         let bookmark = self.bookmark.as_ref();
 
-        Self {
+        let res = Self {
             title: self.title.or_else(|| bookmark?.title.clone()),
             description: self.description,
             path: self.path,
@@ -114,15 +114,31 @@ impl Metadata {
             created_at: self.created_at.or_else(|| bookmark?.created_at),
             updated_at: self.updated_at.or_else(|| bookmark?.updated_at),
             link: self.link.or_else(|| bookmark?.url.clone()),
-            bookmark: self.bookmark.map(|v| v.normalize()),
+            bookmark: self.bookmark.and_then(|v| v.normalize()),
             others: self.others,
+        };
+        if res == Metadata::default() {
+            None
+        } else {
+            Some(res)
         }
     }
 }
 
 impl Bookmark {
-    pub fn normalize(self) -> Self {
+    pub fn toc(value: impl ToString) -> Self {
         Self {
+            toc: Some(value.to_string()),
+            ..Default::default()
+        }
+    }
+
+    pub fn normalize(self) -> Option<Self> {
+        if self.id.is_none() && self.image.is_none() && self.others.is_empty() {
+            return None;
+        }
+
+        Some(Self {
             id: self.id,
             image: self.image,
             journal_date: None,
@@ -132,6 +148,15 @@ impl Bookmark {
             title: None,
             toc: None,
             others: self.others,
+        })
+    }
+
+    pub fn parse_toc(&self) -> Result<Option<Toc>> {
+        if let Some(v) = &self.toc {
+            let res = Toc::parse(v.to_string())?;
+            Ok(Some(res))
+        } else {
+            Ok(None)
         }
     }
 }
@@ -182,6 +207,11 @@ mod tests {
     use super::*;
 
     #[test]
+    fn normalize_empty() {
+        assert_eq!(Metadata::default().normalize(), None);
+    }
+
+    #[test]
     fn normalize_title() {
         let metadata = Metadata {
             title: None,
@@ -193,14 +223,11 @@ mod tests {
         };
         assert_eq!(
             metadata.normalize(),
-            Metadata {
+            Some(Metadata {
                 title: Some("foo".into()),
-                bookmark: Some(Bookmark {
-                    title: None,
-                    ..Default::default()
-                }),
+                bookmark: None,
                 ..Default::default()
-            }
+            })
         );
     }
 
@@ -216,14 +243,11 @@ mod tests {
         };
         assert_eq!(
             metadata.normalize(),
-            Metadata {
+            Some(Metadata {
                 link: Some("foo".into()),
-                bookmark: Some(Bookmark {
-                    url: None,
-                    ..Default::default()
-                }),
+                bookmark: None,
                 ..Default::default()
-            }
+            })
         );
     }
 
@@ -239,14 +263,35 @@ mod tests {
         };
         assert_eq!(
             metadata.normalize(),
-            Metadata {
+            Some(Metadata {
                 journal_date: Some(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap()),
+                bookmark: None,
+                ..Default::default()
+            })
+        );
+    }
+
+    #[test]
+    fn normalize_others() {
+        let metadata = Metadata {
+            bookmark: Some(Bookmark {
+                others: BTreeMap::from([("foo".into(), serde_yaml::Value::String("bar".into()))]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        assert_eq!(
+            metadata.normalize(),
+            Some(Metadata {
                 bookmark: Some(Bookmark {
-                    journal_date: None,
+                    others: BTreeMap::from([(
+                        "foo".into(),
+                        serde_yaml::Value::String("bar".into())
+                    )]),
                     ..Default::default()
                 }),
                 ..Default::default()
-            }
+            })
         );
     }
 
