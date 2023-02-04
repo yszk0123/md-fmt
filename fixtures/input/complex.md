@@ -1,6 +1,12 @@
 ---
 title: foo
 tags: english
+bookmark:
+  toc: |-
+    # aaa
+    ## bbb
+    - ccc
+    # ddd
 ---
 
 Hello, world!

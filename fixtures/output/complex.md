@@ -2,6 +2,12 @@
 title: foo
 tags: english
 ---
+> [!toc]
+> - aaa
+>     - bbb
+>         - ccc
+> - ddd
+
 Hello, world!
 
 1. one

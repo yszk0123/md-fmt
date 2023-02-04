@@ -18,6 +18,12 @@ pub struct Node {
 #[derive(PartialEq, Debug)]
 pub struct FlattenNode(pub usize, pub String);
 
+impl Toc {
+    pub fn flatten_ref(&self) -> Vec<FlattenNode> {
+        self.0.iter().flat_map(|v| v.flatten_ref()).collect()
+    }
+}
+
 impl Node {
     pub fn flatten(self) -> Vec<FlattenNode> {
         let mut values: Vec<FlattenNode> = vec![];
@@ -61,6 +67,12 @@ impl Toc {
 
     pub fn parse(s: String) -> Result<Self> {
         let lines: Vec<Line> = s.lines().map(Line::parse).collect();
+        let (_, nodes) = Self::parse_line(0, 0, &lines, 0);
+        Ok(Self(nodes))
+    }
+
+    pub fn parse_lines(lines: Vec<String>) -> Result<Self> {
+        let lines: Vec<Line> = lines.iter().map(|v| Line::parse(v)).collect();
         let (_, nodes) = Self::parse_line(0, 0, &lines, 0);
         Ok(Self(nodes))
     }

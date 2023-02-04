@@ -1,10 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    toc::{FlattenNode, Toc},
-    Metadata,
-};
+use crate::{toc::FlattenNode, Metadata};
 
 #[derive(PartialEq, Debug, Default)]
 pub struct Note {
@@ -38,9 +35,8 @@ impl Note {
             bookmark: Some(b), ..
         }) = &self.metadata
         {
-            if let Some(Toc(nodes)) = b.parse_toc()? {
-                let nodes: Vec<FlattenNode> = nodes.iter().flat_map(|v| v.flatten_ref()).collect();
-                Ok(vec![Block::toc(nodes)])
+            if let Some(toc) = b.parse_toc()? {
+                Ok(vec![Block::toc(toc.flatten_ref())])
             } else {
                 Ok(vec![])
             }
@@ -109,6 +105,7 @@ pub enum NoteKind {
     Summary,
     Quote,
     Question,
+    Toc,
 }
 
 impl std::fmt::Display for NoteKind {
@@ -118,6 +115,7 @@ impl std::fmt::Display for NoteKind {
             Self::Summary => write!(f, "summary"),
             Self::Quote => write!(f, "quote"),
             Self::Question => write!(f, "question"),
+            Self::Toc => write!(f, "toc"),
         }
     }
 }
@@ -131,6 +129,7 @@ impl std::str::FromStr for NoteKind {
             "summary" => Ok(Self::Summary),
             "quote" => Ok(Self::Quote),
             "question" => Ok(Self::Question),
+            "toc" => Ok(Self::Toc),
             _ => Ok(Self::Note),
         }
     }
