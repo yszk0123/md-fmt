@@ -15,6 +15,25 @@ pub struct Node {
     children: Vec<Node>,
 }
 
+#[derive(PartialEq, Debug)]
+pub struct FlattenNode(usize, String);
+
+impl Node {
+    pub fn flatten(self) -> Vec<FlattenNode> {
+        let mut values: Vec<FlattenNode> = vec![];
+        self.flatten_inner(1, &mut values);
+        values
+    }
+
+    fn flatten_inner(self, indent: usize, values: &mut Vec<FlattenNode>) {
+        values.push(FlattenNode(indent, self.value));
+
+        for child in self.children.into_iter() {
+            child.flatten_inner(indent + 1, values);
+        }
+    }
+}
+
 enum Line {
     Unknown,
     Block(usize, String),
@@ -259,6 +278,27 @@ mod tests {
                 ),
                 Node::new("eee", vec![])
             ])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn node_flatten() -> Result<()> {
+        let node = Node::new(
+            "aaa",
+            vec![
+                Node::new("bbb", vec![Node::new("ccc", vec![])]),
+                Node::new("ddd", vec![]),
+            ],
+        );
+        assert_eq!(
+            node.flatten(),
+            vec![
+                FlattenNode(1, String::from("aaa")),
+                FlattenNode(2, String::from("bbb")),
+                FlattenNode(3, String::from("ccc")),
+                FlattenNode(2, String::from("ddd")),
+            ]
         );
         Ok(())
     }
