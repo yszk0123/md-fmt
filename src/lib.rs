@@ -14,6 +14,7 @@ pub use crate::ast::pretty::pretty;
 pub use crate::ast::printer;
 use crate::cli::config::Config;
 use crate::note::metadata::Metadata;
+pub use crate::note::toc;
 pub use crate::note::NoteParser;
 
 pub fn to_mdast_from_str(s: &str) -> Result<Node> {
