@@ -6,6 +6,7 @@ use markdown::mdast::{self as m, Paragraph};
 
 use crate::ast;
 use crate::note::model::*;
+use crate::toc::Toc;
 use crate::Metadata;
 
 pub struct NoteParser {}
@@ -99,20 +100,23 @@ impl NoteParser {
         if block_quote.children.is_empty() {
             return Ok(Block::Empty);
         }
+
         let (first, rest) = block_quote.children.split_first().unwrap();
         let (node, children, kind) = self.find_note_kind(first);
-        let r = node
+        let lines = node
             .into_iter()
             .chain(children)
             .map(ast::AstPrinter::print)
             .chain(rest.iter().map(ast::AstPrinter::print))
-            .collect::<Result<Vec<String>>>()?
-            .join("\n");
+            .collect::<Result<Vec<String>>>()?;
 
-        Ok(Block::card(
-            kind.unwrap_or(NoteKind::Note),
-            vec![Block::text(r)],
-        ))
+        match kind {
+            Some(NoteKind::Toc) => Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref())),
+            _ => Ok(Block::card(
+                kind.unwrap_or(NoteKind::Note),
+                vec![Block::text(lines.join("\n"))],
+            )),
+        }
     }
 
     fn find_note_kind<'a>(
@@ -127,6 +131,7 @@ impl NoteParser {
                     "[!question]" => (None, rest, Some(NoteKind::Question)),
                     "[!quote]" => (None, rest, Some(NoteKind::Quote)),
                     "[!summary]" => (None, rest, Some(NoteKind::Summary)),
+                    "[!toc]" => (None, rest, Some(NoteKind::Toc)),
                     _ => (None, children, None),
                 }
             } else {
@@ -154,7 +159,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::ast::builder::*;
+    use crate::{ast::builder::*, toc::FlattenNode};
 
     #[test]
     fn text_to_invalid() {
@@ -251,6 +256,7 @@ mod tests {
                 block_quote(vec![paragraph(vec![text("[!summary]"), text("foo")])]),
                 block_quote(vec![paragraph(vec![text("[!quote]"), text("foo")])]),
                 block_quote(vec![paragraph(vec![text("[!question]"), text("foo")])]),
+                block_quote(vec![paragraph(vec![text("[!toc]"), text("- foo")])]),
             ]))?,
             Note::new(
                 None,
@@ -260,6 +266,7 @@ mod tests {
                     Block::card(NoteKind::Summary, vec![Block::text("foo")]),
                     Block::card(NoteKind::Quote, vec![Block::text("foo")]),
                     Block::card(NoteKind::Question, vec![Block::text("foo")]),
+                    Block::toc(vec![FlattenNode(1, String::from("foo"))]),
                 ],
                 vec![]
             )

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 
 #[derive(PartialEq, Serialize, Deserialize, Debug)]
-pub struct Toc(Vec<Node>);
+pub struct Toc(pub Vec<Node>);
 
 #[serde_as]
 #[derive(PartialEq, Serialize, Deserialize, Debug)]
@@ -13,6 +13,45 @@ pub struct Toc(Vec<Node>);
 pub struct Node {
     value: String,
     children: Vec<Node>,
+}
+
+#[derive(PartialEq, Debug)]
+pub struct FlattenNode(pub usize, pub String);
+
+impl Toc {
+    pub fn flatten_ref(&self) -> Vec<FlattenNode> {
+        self.0.iter().flat_map(|v| v.flatten_ref()).collect()
+    }
+}
+
+impl Node {
+    pub fn flatten(self) -> Vec<FlattenNode> {
+        let mut values: Vec<FlattenNode> = vec![];
+        self.flatten_inner(1, &mut values);
+        values
+    }
+
+    fn flatten_inner(self, indent: usize, values: &mut Vec<FlattenNode>) {
+        values.push(FlattenNode(indent, self.value));
+
+        for child in self.children.into_iter() {
+            child.flatten_inner(indent + 1, values);
+        }
+    }
+
+    pub fn flatten_ref(&self) -> Vec<FlattenNode> {
+        let mut values: Vec<FlattenNode> = vec![];
+        self.flatten_inner_ref(1, &mut values);
+        values
+    }
+
+    fn flatten_inner_ref(&self, indent: usize, values: &mut Vec<FlattenNode>) {
+        values.push(FlattenNode(indent, self.value.clone()));
+
+        for child in self.children.iter() {
+            child.flatten_inner_ref(indent + 1, values);
+        }
+    }
 }
 
 enum Line {
@@ -28,6 +67,12 @@ impl Toc {
 
     pub fn parse(s: String) -> Result<Self> {
         let lines: Vec<Line> = s.lines().map(Line::parse).collect();
+        let (_, nodes) = Self::parse_line(0, 0, &lines, 0);
+        Ok(Self(nodes))
+    }
+
+    pub fn parse_lines(lines: Vec<String>) -> Result<Self> {
+        let lines: Vec<Line> = lines.iter().map(|v| Line::parse(v)).collect();
         let (_, nodes) = Self::parse_line(0, 0, &lines, 0);
         Ok(Self(nodes))
     }
@@ -259,6 +304,27 @@ mod tests {
                 ),
                 Node::new("eee", vec![])
             ])
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn node_flatten() -> Result<()> {
+        let node = Node::new(
+            "aaa",
+            vec![
+                Node::new("bbb", vec![Node::new("ccc", vec![])]),
+                Node::new("ddd", vec![]),
+            ],
+        );
+        assert_eq!(
+            node.flatten(),
+            vec![
+                FlattenNode(1, String::from("aaa")),
+                FlattenNode(2, String::from("bbb")),
+                FlattenNode(3, String::from("ccc")),
+                FlattenNode(2, String::from("ddd")),
+            ]
         );
         Ok(())
     }

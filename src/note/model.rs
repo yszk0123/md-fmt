@@ -1,6 +1,7 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-use crate::Metadata;
+use crate::{toc::FlattenNode, Metadata};
 
 #[derive(PartialEq, Debug, Default)]
 pub struct Note {
@@ -18,11 +19,29 @@ impl Note {
         }
     }
 
-    pub fn normalize(self) -> Self {
-        Self {
-            metadata: self.metadata.map(Metadata::normalize),
-            head: self.head,
+    pub fn normalize(self) -> Result<Self> {
+        let mut head = self.get_toc()?;
+        head.extend(self.head);
+
+        Ok(Self {
+            metadata: self.metadata.and_then(Metadata::normalize),
+            head,
             body: self.body,
+        })
+    }
+
+    fn get_toc(&self) -> Result<Vec<Block>> {
+        if let Some(Metadata {
+            bookmark: Some(b), ..
+        }) = &self.metadata
+        {
+            if let Some(toc) = b.parse_toc()? {
+                Ok(vec![Block::toc(toc.flatten_ref())])
+            } else {
+                Ok(vec![])
+            }
+        } else {
+            Ok(vec![])
         }
     }
 }
@@ -34,6 +53,7 @@ pub enum Block {
     Section(Section),
     Card(Card),
     Text(String),
+    Toc(Vec<FlattenNode>),
 }
 
 impl Block {
@@ -42,6 +62,10 @@ impl Block {
             title: title.to_string(),
             children,
         })
+    }
+
+    pub fn toc(children: Vec<FlattenNode>) -> Self {
+        Self::Toc(children)
     }
 
     pub fn card(kind: NoteKind, children: Vec<Block>) -> Self {
@@ -81,6 +105,7 @@ pub enum NoteKind {
     Summary,
     Quote,
     Question,
+    Toc,
 }
 
 impl std::fmt::Display for NoteKind {
@@ -90,6 +115,7 @@ impl std::fmt::Display for NoteKind {
             Self::Summary => write!(f, "summary"),
             Self::Quote => write!(f, "quote"),
             Self::Question => write!(f, "question"),
+            Self::Toc => write!(f, "toc"),
         }
     }
 }
@@ -103,6 +129,7 @@ impl std::str::FromStr for NoteKind {
             "summary" => Ok(Self::Summary),
             "quote" => Ok(Self::Quote),
             "question" => Ok(Self::Question),
+            "toc" => Ok(Self::Toc),
             _ => Ok(Self::Note),
         }
     }

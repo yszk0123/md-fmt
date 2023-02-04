@@ -33,7 +33,7 @@ pub fn to_mdast_from_str(s: &str) -> Result<Node> {
 
 pub fn format(node: &Node) -> Result<String> {
     let note = NoteParser::parse(node)?;
-    let note = note.normalize();
+    let note = note.normalize()?;
     NotePrinter::print(&note)
 }
 
