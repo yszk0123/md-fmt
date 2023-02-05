@@ -114,6 +114,9 @@ impl AstPrinter {
             Node::Break(_) => Ok("\n".into()),
             Node::Link(Link { children, url, .. }) => {
                 let text = self.map_children(children, None)?;
+                if text == *url {
+                    return Ok(url.to_string());
+                }
                 Ok(format!("[{text}]({url})"))
             },
             Node::Table(Table {
