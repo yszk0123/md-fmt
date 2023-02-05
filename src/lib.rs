@@ -21,7 +21,12 @@ use crate::note::metadata::Metadata;
 pub use crate::note::toc;
 pub use crate::note::NoteParser;
 
-static RE: Lazy<Regex> = Lazy::new(|| RegexBuilder::new(r"\[!\[[^]]*\]\([^)]*\)[^]]*\]\([^)]*\)").multi_line(true).build().unwrap());
+static RE: Lazy<Regex> = Lazy::new(|| {
+    RegexBuilder::new(r"\[!\[[^]]*\]\([^)]*\)[^]]*\]\([^)]*\)")
+        .multi_line(true)
+        .build()
+        .unwrap()
+});
 
 // FIXME: Workaround
 // thread 'main' panicked at 'internal error: entered unreachable code: expected footnote refereence, image, or link on stack', /Users/yszk0123/.cargo/registry/src/github.com-1ecc6299db9ec823/markdown-1.0.0-alpha.5/src/to_mdast.rs:1271:14

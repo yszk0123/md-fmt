@@ -5,7 +5,6 @@ version = "Two"
 max_width = 100
 group_imports = "StdExternalCrate"
 match_block_trailing_comma = true
-error_on_line_overflow = true
 error_on_unformatted = true
 reorder_impl_items = true
 use_field_init_shorthand = true
