@@ -104,6 +104,11 @@ fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
             Ok(())
         },
 
+        Block::Single(node) => {
+            chunks.push(Chunk::Single(node.clone()));
+            Ok(())
+        },
+
         Block::Toc(nodes) => {
             let s = nodes
                 .iter()

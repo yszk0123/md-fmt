@@ -53,6 +53,7 @@ pub enum Block {
     Section(Section),
     Card(Card),
     Text(String),
+    Single(String),
     Toc(Vec<FlattenNode>),
 }
 
@@ -70,6 +71,10 @@ impl Block {
 
     pub fn card(kind: NoteKind, children: Vec<Block>) -> Self {
         Self::Card(Card { kind, children })
+    }
+
+    pub fn single(text: impl ToString) -> Self {
+        Self::Single(text.to_string())
     }
 
     pub fn text(text: impl ToString) -> Self {

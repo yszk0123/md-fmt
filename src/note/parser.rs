@@ -85,6 +85,11 @@ impl NoteParser {
                     iter.next();
                     res.push(self.parse_block_quote(node)?);
                 },
+                node @ m::Node::FootnoteDefinition(_) => {
+                    iter.next();
+                    let s = ast::AstPrinter::print(node)?;
+                    res.push(Block::Single(s.trim().to_string()));
+                },
                 node => {
                     iter.next();
                     let s = ast::AstPrinter::print(node)?;

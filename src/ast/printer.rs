@@ -1,7 +1,9 @@
 #![allow(unstable_name_collisions)]
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use markdown::mdast::{Image, Link, Node};
+use markdown::mdast::{
+    Delete, FootnoteDefinition, FootnoteReference, Html, Image, Link, Node, Text,
+};
 
 const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
@@ -96,6 +98,18 @@ impl AstPrinter {
                 let s = self.map_children(&node.children, None)?;
                 Ok(format!("**{s}**"))
             },
+            Node::Delete(Delete { children, .. }) => {
+                let s = self.map_children(children, None)?;
+                Ok(format!("~~{s}~~"))
+            },
+            Node::FootnoteDefinition(FootnoteDefinition {
+                children,
+                identifier,
+                ..
+            }) => {
+                let s = self.map_children(children, None)?;
+                Ok(format!("[^{identifier}]: {s}"))
+            },
             Node::Break(_) => Ok("\n".into()),
             Node::Link(Link { children, url, .. }) => {
                 let text = self.map_children(children, None)?;
@@ -103,8 +117,12 @@ impl AstPrinter {
             },
 
             // Literal
-            Node::Text(text) => Ok(text.value.to_owned()),
+            Node::Html(Html { value, .. }) => Ok(value.to_owned()),
+            Node::Text(Text { value, .. }) => Ok(value.to_owned()),
             Node::Yaml(node) => Ok(format!("---\n{}---\n", node.value)),
+            Node::FootnoteReference(FootnoteReference { identifier, .. }) => {
+                Ok(format!("[^{identifier}]"))
+            },
             Node::InlineCode(node) => Ok(format!("`{}`", node.value)),
             Node::ThematicBreak(_) => Ok("---\n".to_owned()),
             Node::Image(Image { alt, url, .. }) => Ok(format!("![{alt}]({url})")),
