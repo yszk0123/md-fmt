@@ -2,7 +2,8 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use markdown::mdast::{
-    Delete, FootnoteDefinition, FootnoteReference, Html, Image, Link, Node, Text,
+    AlignKind, Delete, FootnoteDefinition, FootnoteReference, Html, Image, Link, Node, Table,
+    TableCell, TableRow, Text,
 };
 
 const INDENT: &str = "    ";
@@ -115,6 +116,44 @@ impl AstPrinter {
                 let text = self.map_children(children, None)?;
                 Ok(format!("[{text}]({url})"))
             },
+            Node::Table(Table {
+                align, children, ..
+            }) => {
+                let sep = align
+                    .iter()
+                    .map(|kind| match kind {
+                        AlignKind::Left => ":--",
+                        AlignKind::Right => "--:",
+                        AlignKind::Center => ":-:",
+                        AlignKind::None => "---",
+                    })
+                    .collect::<Vec<&str>>()
+                    .join(" | ");
+                let mut rows: Vec<String> = vec![];
+                for (i, child) in children.iter().enumerate() {
+                    if let Node::TableRow(TableRow { children, .. }) = child {
+                        let s = children
+                            .iter()
+                            .map(|v| self.print_root(v))
+                            .collect::<Result<Vec<String>>>()?
+                            .join(" | ");
+                        rows.push(format!("| {s} |"));
+                    };
+                    if i == 0 {
+                        rows.push(format!("| {sep} |"));
+                    }
+                }
+                Ok(rows.join("\n"))
+            },
+            Node::TableRow(TableRow { children, .. }) => {
+                let s = children
+                    .iter()
+                    .map(|v| self.print_root(v))
+                    .collect::<Result<Vec<String>>>()?
+                    .join(" | ");
+                Ok(format!("| {s} |\n"))
+            },
+            Node::TableCell(TableCell { children, .. }) => self.map_children(children, None),
 
             // Literal
             Node::Html(Html { value, .. }) => Ok(value.to_owned()),
