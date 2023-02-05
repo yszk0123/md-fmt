@@ -9,11 +9,37 @@ use yaml_rust::{YamlEmitter, YamlLoader};
 use super::model::NoteKind;
 use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
 
+#[derive(PartialEq, Serialize, Deserialize, Debug)]
+pub enum Metadata {
+    Meta(Meta),
+    Raw(String),
+}
+
+impl Metadata {
+    pub fn from_str(s: &str) -> Result<Self> {
+        Ok(Metadata::Meta(Meta::from_str(s)?))
+    }
+
+    pub fn to_md(&self) -> Result<String> {
+        match self {
+            Self::Meta(v) => v.to_md(),
+            Self::Raw(v) => Ok(v.to_owned() + "\n"),
+        }
+    }
+
+    pub fn normalize(self) -> Option<Self> {
+        match self {
+            Self::Meta(v) => v.normalize().map(Self::Meta),
+            v => Some(v),
+        }
+    }
+}
+
 #[serde_as]
 #[skip_serializing_none]
 #[derive(Default, PartialEq, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct Metadata {
+pub struct Meta {
     pub title: Option<String>,
     pub description: Option<String>,
     pub path: Option<String>,
@@ -77,7 +103,7 @@ pub struct Bookmark {
 #[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
 pub struct BookmarkId(String);
 
-impl Metadata {
+impl Meta {
     pub fn from_str(s: &str) -> Result<Self> {
         serde_yaml::from_str(s).with_context(|| "could not stringify front matter".to_string())
     }
@@ -117,7 +143,7 @@ impl Metadata {
             bookmark: self.bookmark.and_then(|v| v.normalize()),
             others: self.others,
         };
-        if res == Metadata::default() {
+        if res == Self::default() {
             None
         } else {
             Some(res)
@@ -208,12 +234,12 @@ mod tests {
 
     #[test]
     fn normalize_empty() {
-        assert_eq!(Metadata::default().normalize(), None);
+        assert_eq!(Meta::default().normalize(), None);
     }
 
     #[test]
     fn normalize_title() {
-        let metadata = Metadata {
+        let metadata = Meta {
             title: None,
             bookmark: Some(Bookmark {
                 title: Some("foo".into()),
@@ -223,7 +249,7 @@ mod tests {
         };
         assert_eq!(
             metadata.normalize(),
-            Some(Metadata {
+            Some(Meta {
                 title: Some("foo".into()),
                 bookmark: None,
                 ..Default::default()
@@ -233,7 +259,7 @@ mod tests {
 
     #[test]
     fn normalize_link() {
-        let metadata = Metadata {
+        let metadata = Meta {
             link: None,
             bookmark: Some(Bookmark {
                 url: Some("foo".into()),
@@ -243,7 +269,7 @@ mod tests {
         };
         assert_eq!(
             metadata.normalize(),
-            Some(Metadata {
+            Some(Meta {
                 link: Some("foo".into()),
                 bookmark: None,
                 ..Default::default()
@@ -253,7 +279,7 @@ mod tests {
 
     #[test]
     fn normalize_journal_date() {
-        let metadata = Metadata {
+        let metadata = Meta {
             journal_date: None,
             bookmark: Some(Bookmark {
                 journal_date: Some(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap()),
@@ -263,7 +289,7 @@ mod tests {
         };
         assert_eq!(
             metadata.normalize(),
-            Some(Metadata {
+            Some(Meta {
                 journal_date: Some(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap()),
                 bookmark: None,
                 ..Default::default()
@@ -273,7 +299,7 @@ mod tests {
 
     #[test]
     fn normalize_others() {
-        let metadata = Metadata {
+        let metadata = Meta {
             bookmark: Some(Bookmark {
                 others: BTreeMap::from([("foo".into(), serde_yaml::Value::String("bar".into()))]),
                 ..Default::default()
@@ -282,7 +308,7 @@ mod tests {
         };
         assert_eq!(
             metadata.normalize(),
-            Some(Metadata {
+            Some(Meta {
                 bookmark: Some(Bookmark {
                     others: BTreeMap::from([(
                         "foo".into(),
@@ -298,7 +324,7 @@ mod tests {
     #[test]
     fn serialize() -> Result<()> {
         assert_eq!(
-            serde_json::to_value(&Metadata {
+            serde_json::to_value(&Meta {
                 kind: Some(NoteKind::Quote),
                 status: Some(NoteStatus::InProgress),
                 ..Default::default()
@@ -314,11 +340,11 @@ mod tests {
     #[test]
     fn deserialize() -> Result<()> {
         assert_eq!(
-            serde_json::from_value::<Metadata>(json!({
+            serde_json::from_value::<Meta>(json!({
                 "kind": "quote",
                 "status": "in progress"
             }))?,
-            Metadata {
+            Meta {
                 kind: Some(NoteKind::Quote),
                 status: Some(NoteStatus::InProgress),
                 ..Default::default()

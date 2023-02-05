@@ -1,6 +1,6 @@
 use std::fmt;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveDateTime, Utc};
 use serde::{de, Deserializer, Serialize, Serializer};
 use serde_with::{DeserializeAs, SerializeAs};
@@ -54,9 +54,24 @@ impl<'de> de::Visitor<'de> for DateTimeVisitor {
                 return Ok(t);
             }
         }
+        if let Ok(t) = parse_yyyy_mm(value) {
+            let t = t
+                .and_hms_opt(0, 0, 0)
+                .map(|t| DateTime::<Utc>::from_utc(t, Utc));
+            if let Some(t) = t {
+                return Ok(t);
+            }
+        }
 
         Err(E::custom(""))
     }
+}
+
+fn parse_yyyy_mm(s: &str) -> Result<NaiveDate> {
+    let mut ss = s.split('-');
+    let year = ss.next().ok_or_else(|| anyhow!(""))?.parse::<i32>()?;
+    let month = ss.next().ok_or_else(|| anyhow!(""))?.parse::<u32>()?;
+    NaiveDate::from_ymd_opt(year, month, 1).ok_or_else(|| anyhow!(""))
 }
 
 #[cfg(test)]
@@ -73,6 +88,16 @@ mod tests {
     struct Foo {
         #[serde_as(as = "Option<FlexibleDateTime>")]
         date: Option<DateTime<Utc>>,
+    }
+
+    #[test]
+    fn it_should_parse_yyyy_mm() -> Result<()> {
+        let expected = Foo {
+            date: Some(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap()),
+        };
+        let actual: Foo = serde_json::from_value(json!({ "date": "2000-01" }))?;
+        assert_eq!(expected, actual);
+        Ok(())
     }
 
     #[test]

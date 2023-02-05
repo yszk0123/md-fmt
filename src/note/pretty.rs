@@ -44,6 +44,7 @@ fn pretty_inner(node: &Block, depth: usize) -> String {
 
         // Literals.
         Block::Text(x) => format!("{}\n", literal_to_string("Text", x, depth)),
+        Block::Single(x) => format!("{}\n", literal_to_string("Single", x, depth)),
     }
 }
 

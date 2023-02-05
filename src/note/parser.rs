@@ -39,7 +39,10 @@ impl NoteParser {
     fn parse_metadata(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Option<Metadata>> {
         if let Some(m::Node::Yaml(node)) = iter.peek() {
             iter.next();
-            return Ok(Some(Metadata::from_str(&node.value)?));
+            return Ok(Some(
+                Metadata::from_str(&node.value)
+                    .unwrap_or_else(|_| Metadata::Raw(node.value.to_owned())),
+            ));
         }
         Ok(None)
     }
@@ -84,6 +87,11 @@ impl NoteParser {
                 m::Node::BlockQuote(node) => {
                     iter.next();
                     res.push(self.parse_block_quote(node)?);
+                },
+                node @ m::Node::FootnoteDefinition(_) => {
+                    iter.next();
+                    let s = ast::AstPrinter::print(node)?;
+                    res.push(Block::Single(s.trim().to_string()));
                 },
                 node => {
                     iter.next();
@@ -159,7 +167,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::{ast::builder::*, toc::FlattenNode};
+    use crate::{ast::builder::*, note::metadata::Meta, toc::FlattenNode};
 
     #[test]
     fn text_to_invalid() {
@@ -279,10 +287,10 @@ mod tests {
         assert_eq!(
             NoteParser::parse(&root(vec![yaml("title: foo")]))?,
             Note::new(
-                Some(Metadata {
+                Some(Metadata::Meta(Meta {
                     title: Some("foo".into()),
                     ..Default::default()
-                }),
+                })),
                 vec![],
                 vec![]
             )

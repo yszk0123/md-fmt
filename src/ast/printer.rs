@@ -1,7 +1,10 @@
 #![allow(unstable_name_collisions)]
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
-use markdown::mdast::{Image, Link, Node};
+use markdown::mdast::{
+    AlignKind, Delete, FootnoteDefinition, FootnoteReference, Html, Image, Link, Node, Table,
+    TableCell, TableRow, Text,
+};
 
 const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
@@ -96,15 +99,72 @@ impl AstPrinter {
                 let s = self.map_children(&node.children, None)?;
                 Ok(format!("**{s}**"))
             },
+            Node::Delete(Delete { children, .. }) => {
+                let s = self.map_children(children, None)?;
+                Ok(format!("~~{s}~~"))
+            },
+            Node::FootnoteDefinition(FootnoteDefinition {
+                children,
+                identifier,
+                ..
+            }) => {
+                let s = self.map_children(children, None)?;
+                Ok(format!("[^{identifier}]: {s}"))
+            },
             Node::Break(_) => Ok("\n".into()),
             Node::Link(Link { children, url, .. }) => {
                 let text = self.map_children(children, None)?;
+                if text == *url {
+                    return Ok(url.to_string());
+                }
                 Ok(format!("[{text}]({url})"))
             },
+            Node::Table(Table {
+                align, children, ..
+            }) => {
+                let sep = align
+                    .iter()
+                    .map(|kind| match kind {
+                        AlignKind::Left => ":--",
+                        AlignKind::Right => "--:",
+                        AlignKind::Center => ":-:",
+                        AlignKind::None => "---",
+                    })
+                    .collect::<Vec<&str>>()
+                    .join(" | ");
+                let mut rows: Vec<String> = vec![];
+                for (i, child) in children.iter().enumerate() {
+                    if let Node::TableRow(TableRow { children, .. }) = child {
+                        let s = children
+                            .iter()
+                            .map(|v| self.print_root(v))
+                            .collect::<Result<Vec<String>>>()?
+                            .join(" | ");
+                        rows.push(format!("| {s} |"));
+                    };
+                    if i == 0 {
+                        rows.push(format!("| {sep} |"));
+                    }
+                }
+                Ok(rows.join("\n"))
+            },
+            Node::TableRow(TableRow { children, .. }) => {
+                let s = children
+                    .iter()
+                    .map(|v| self.print_root(v))
+                    .collect::<Result<Vec<String>>>()?
+                    .join(" | ");
+                Ok(format!("| {s} |\n"))
+            },
+            Node::TableCell(TableCell { children, .. }) => self.map_children(children, None),
 
             // Literal
-            Node::Text(text) => Ok(text.value.to_owned()),
+            Node::Html(Html { value, .. }) => Ok(value.to_owned()),
+            Node::Text(Text { value, .. }) => Ok(value.to_owned()),
             Node::Yaml(node) => Ok(format!("---\n{}---\n", node.value)),
+            Node::FootnoteReference(FootnoteReference { identifier, .. }) => {
+                Ok(format!("[^{identifier}]"))
+            },
             Node::InlineCode(node) => Ok(format!("`{}`", node.value)),
             Node::ThematicBreak(_) => Ok("---\n".to_owned()),
             Node::Image(Image { alt, url, .. }) => Ok(format!("![{alt}]({url})")),
