@@ -15,7 +15,7 @@ pub struct Node {
     children: Vec<Node>,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct FlattenNode(pub usize, pub String);
 
 impl Toc {

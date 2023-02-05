@@ -46,7 +46,7 @@ impl Note {
     }
 }
 
-#[derive(PartialEq, Default, Debug)]
+#[derive(PartialEq, Default, Debug, Clone)]
 pub enum Block {
     #[default]
     Empty,
@@ -77,7 +77,7 @@ impl Block {
     }
 }
 
-#[derive(PartialEq, Debug, Default)]
+#[derive(PartialEq, Debug, Default, Clone)]
 pub struct Section {
     pub title: String,
     pub children: Vec<Block>,
@@ -92,13 +92,13 @@ impl Section {
     }
 }
 
-#[derive(PartialEq, Debug, Default)]
+#[derive(PartialEq, Debug, Default, Clone)]
 pub struct Card {
     pub kind: NoteKind,
     pub children: Vec<Block>,
 }
 
-#[derive(PartialEq, Debug, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone)]
 pub enum NoteKind {
     #[default]
     Note,
