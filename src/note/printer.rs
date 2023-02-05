@@ -9,75 +9,100 @@ const INDENT: &str = "    ";
 
 pub struct NotePrinter {}
 
+enum Chunk {
+    Single(String),
+    Double(String),
+}
+
+struct ChunkPrinter(Vec<Chunk>);
+
+impl ChunkPrinter {
+    pub fn new() -> Self {
+        Self(vec![])
+    }
+
+    pub fn push(&mut self, v: Chunk) {
+        self.0.push(v);
+    }
+
+    pub fn print(&self) -> String {
+        let mut res = String::new();
+        for v in self.0.iter() {
+            match v {
+                Chunk::Single(s) => {
+                    res.push_str(s);
+                    res.push('\n');
+                },
+                Chunk::Double(s) => {
+                    res.push_str(s);
+                    res.push('\n');
+                    res.push('\n');
+                },
+            }
+        }
+        res.trim().to_string()
+    }
+}
+
 impl NotePrinter {
     pub fn print(note: &Note) -> Result<String> {
-        let mut res = String::new();
+        let mut chunks = ChunkPrinter::new();
 
-        res.push_str(&from_yaml(&note.metadata)?);
-        res.push_str(&from_head(&note.head)?);
-        res.push_str(&from_body(&note.body)?);
+        from_yaml(&note.metadata, &mut chunks)?;
+        from_head(&note.head, &mut chunks)?;
+        from_body(&note.body, &mut chunks)?;
 
-        Ok(res.trim().to_string() + "\n")
+        Ok(chunks.print().trim().to_string() + "\n")
     }
 }
 
-fn from_yaml(metadata: &Option<Metadata>) -> Result<String> {
+fn from_yaml(metadata: &Option<Metadata>, chunks: &mut ChunkPrinter) -> Result<()> {
     if let Some(metadata) = metadata {
-        Ok(format!("---\n{}---\n", metadata.to_md()?))
-    } else {
-        Ok(String::from(""))
+        chunks.push(Chunk::Single(format!("---\n{}---", metadata.to_md()?)));
     }
+    Ok(())
 }
 
-fn from_head(children: &Vec<Block>) -> Result<String> {
-    let mut res = String::new();
-
+fn from_head(children: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
     for node in children {
-        res.push_str(&from_node(node, 2)?);
-        res.push('\n');
+        from_node(node, 2, chunks)?;
     }
-
-    Ok(res)
+    Ok(())
 }
 
-fn from_body(children: &Vec<Section>) -> Result<String> {
-    let mut res = String::new();
-
-    for block in children {
-        res.push_str(&heading(1, &block.title));
-        res.push('\n');
-        for node in &block.children {
-            res.push_str(&from_node(node, 2)?);
-        }
+fn from_body(children: &Vec<Section>, chunks: &mut ChunkPrinter) -> Result<()> {
+    for child in children {
+        from_node(&Block::Section(child.clone()), 1, chunks)?;
     }
-
-    Ok(res)
+    Ok(())
 }
 
-fn from_node(node: &Block, depth: u8) -> Result<String> {
+fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
     match node {
-        Block::Empty => Ok(String::from("")),
+        Block::Empty => Ok(()),
 
         Block::Section(Section { title, children }) => {
-            let mut res = heading(depth, title);
-            res.push('\n');
+            chunks.push(Chunk::Single(heading(depth, title)));
             for child in children {
-                res.push_str(&from_node(child, depth + 1)?);
-                res.push('\n');
+                from_node(child, depth + 1, chunks)?;
             }
-            Ok(res)
+            Ok(())
         },
 
         Block::Card(Card { kind, children }) => {
-            let mut res = format!("[!{kind}]\n");
+            let mut subchunks = ChunkPrinter::new();
+            subchunks.push(Chunk::Single(format!("[!{kind}]")));
             for child in children {
-                res.push_str(&from_node(child, depth + 1)?);
-                res.push('\n');
+                from_node(child, depth + 1, &mut subchunks)?;
             }
-            Ok(block_quote(res))
+            chunks.push(Chunk::Single(block_quote(subchunks.print())));
+            Ok(())
         },
 
-        Block::Text(node) => Ok(node.clone()),
+        Block::Text(node) => {
+            chunks.push(Chunk::Double(node.clone()));
+            Ok(())
+        },
 
         Block::Toc(nodes) => {
             let s = nodes
@@ -87,8 +112,8 @@ fn from_node(node: &Block, depth: u8) -> Result<String> {
                 })
                 .collect::<Vec<String>>()
                 .join("\n");
-
-            Ok(format!("> [!toc]\n{s}\n"))
+            chunks.push(Chunk::Double(format!("> [!toc]\n{s}")));
+            Ok(())
         },
     }
 }
