@@ -10,6 +10,8 @@ use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
 use note::NotePrinter;
+use once_cell::sync::Lazy;
+use regex::{Regex, RegexBuilder};
 
 pub use crate::ast::builder;
 pub use crate::ast::pretty::pretty;
@@ -19,9 +21,17 @@ use crate::note::metadata::Metadata;
 pub use crate::note::toc;
 pub use crate::note::NoteParser;
 
+static RE: Lazy<Regex> = Lazy::new(|| RegexBuilder::new(r"\[!\[[^]]*\]\([^)]*\)[^]]*\]\([^)]*\)").multi_line(true).build().unwrap());
+
+// FIXME: Workaround
+// thread 'main' panicked at 'internal error: entered unreachable code: expected footnote refereence, image, or link on stack', /Users/yszk0123/.cargo/registry/src/github.com-1ecc6299db9ec823/markdown-1.0.0-alpha.5/src/to_mdast.rs:1271:14
+fn escape(s: &str) -> String {
+    RE.replace_all(s, "`$0`").to_string()
+}
+
 pub fn to_mdast_from_str(s: &str) -> Result<Node> {
     to_mdast(
-        s,
+        &escape(s),
         &ParseOptions {
             constructs: Constructs {
                 frontmatter: true,
