@@ -42,6 +42,14 @@ pub fn run(config: Config) -> Result<()> {
         let content = fs::read_to_string(&file)
             .with_context(|| format!("could not read file `{}`", file.display()))?;
 
+        if config.check {
+            let ok = to_mdast_from_str(&content)
+                .and_then(|node| format(&node))
+                .is_ok();
+            println!("{ok}: \"{}\"", file.display());
+            continue;
+        }
+
         let node = to_mdast_from_str(&content)
             .with_context(|| format!("could not parse file `{}`", file.display()))?;
 

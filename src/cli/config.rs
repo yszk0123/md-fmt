@@ -20,6 +20,9 @@ struct Args {
 
     #[arg(long)]
     note: bool,
+
+    #[arg(long)]
+    check: bool,
 }
 
 pub struct Config {
@@ -27,6 +30,7 @@ pub struct Config {
     pub write: bool,
     pub md: bool,
     pub note: bool,
+    pub check: bool,
 }
 
 impl Config {
@@ -39,6 +43,7 @@ impl Config {
             write: args.write,
             md: args.md,
             note: args.note,
+            check: args.check,
         })
     }
 }
