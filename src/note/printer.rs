@@ -129,16 +129,16 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::note::metadata::Bookmark;
+    use crate::note::metadata::{Bookmark, Meta};
 
     #[test]
     fn convert_metadata() -> Result<()> {
         assert_eq!(
             NotePrinter::print(&Note::new(
-                Some(Metadata {
+                Some(Metadata::Meta(Meta {
                     title: Some("foo".into()),
                     ..Default::default()
-                }),
+                })),
                 vec![],
                 vec![]
             ))?,
@@ -154,13 +154,13 @@ mod tests {
     #[test]
     fn convert_toc() -> Result<()> {
         let note = Note::new(
-            Some(Metadata {
+            Some(Metadata::Meta(Meta {
                 bookmark: Some(Bookmark::toc(indoc! {"
                     # aaa
                     ## bbb
                 "})),
                 ..Default::default()
-            }),
+            })),
             vec![],
             vec![],
         )

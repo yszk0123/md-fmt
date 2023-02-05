@@ -1,6 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
+use super::metadata::Meta;
 use crate::{toc::FlattenNode, Metadata};
 
 #[derive(PartialEq, Debug, Default)]
@@ -31,9 +32,9 @@ impl Note {
     }
 
     fn get_toc(&self) -> Result<Vec<Block>> {
-        if let Some(Metadata {
+        if let Some(Metadata::Meta(Meta {
             bookmark: Some(b), ..
-        }) = &self.metadata
+        })) = &self.metadata
         {
             if let Some(toc) = b.parse_toc()? {
                 Ok(vec![Block::toc(toc.flatten_ref())])
