@@ -70,11 +70,12 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
         .with_context(|| format!("could not read file `{}`", file.display()))?;
 
     if config.check {
-        println!("Checking \"{}\"", file.display());
-        let ok = to_mdast_from_str(&content)
+        let err = to_mdast_from_str(&content)
             .and_then(|node| format(&node))
-            .is_ok();
-        println!("=> {ok}");
+            .is_err();
+        if err {
+            println!("{}", file.display());
+        }
         return Ok(());
     }
 
