@@ -9,6 +9,7 @@ edition = "2021"
 anyhow = "1.0.68"
 chrono = { version = "0.4.23", features = ["serde"] }
 clap = { version = "4.1.4", features = ["derive"] }
+glob = "0.3.1"
 indoc = "2.0.0"
 itertools = "0.10.5"
 markdown = "1.0.0-alpha.5"
