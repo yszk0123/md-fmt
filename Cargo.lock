@@ -449,6 +449,7 @@ dependencies = [
  "indoc",
  "itertools",
  "markdown",
+ "once_cell",
  "pretty_assertions",
  "regex",
  "serde",
