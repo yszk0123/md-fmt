@@ -11,13 +11,13 @@ pub struct NotePrinter {}
 
 impl NotePrinter {
     pub fn print(note: &Note) -> Result<String> {
-        let mut children = String::new();
+        let mut res = String::new();
 
-        children.push_str(&from_yaml(&note.metadata)?);
-        children.push_str(&from_head(&note.head)?);
-        children.push_str(&from_body(&note.body)?);
+        res.push_str(&from_yaml(&note.metadata)?);
+        res.push_str(&from_head(&note.head)?);
+        res.push_str(&from_body(&note.body)?);
 
-        Ok(children.trim().to_string() + "\n")
+        Ok(res.trim().to_string() + "\n")
     }
 }
 
@@ -30,28 +30,28 @@ fn from_yaml(metadata: &Option<Metadata>) -> Result<String> {
 }
 
 fn from_head(children: &Vec<Block>) -> Result<String> {
-    let mut nodes = String::new();
+    let mut res = String::new();
 
     for node in children {
-        nodes.push_str(&from_node(node, 2)?);
-        nodes.push('\n');
+        res.push_str(&from_node(node, 2)?);
+        res.push('\n');
     }
 
-    Ok(nodes)
+    Ok(res)
 }
 
 fn from_body(children: &Vec<Section>) -> Result<String> {
-    let mut nodes = String::new();
+    let mut res = String::new();
 
     for block in children {
-        nodes.push_str(&heading(1, &block.title));
-        nodes.push('\n');
+        res.push_str(&heading(1, &block.title));
+        res.push('\n');
         for node in &block.children {
-            nodes.push_str(&from_node(node, 2)?);
+            res.push_str(&from_node(node, 2)?);
         }
     }
 
-    Ok(nodes)
+    Ok(res)
 }
 
 fn from_node(node: &Block, depth: u8) -> Result<String> {
