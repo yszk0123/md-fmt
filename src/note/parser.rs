@@ -88,7 +88,7 @@ impl NoteParser {
                 node => {
                     iter.next();
                     let s = ast::AstPrinter::print(node)?;
-                    res.push(Block::Text(s));
+                    res.push(Block::Text(s.trim().to_string()));
                 },
             }
         }

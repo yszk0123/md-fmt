@@ -53,7 +53,8 @@ pub fn run(config: Config) -> Result<()> {
 
         if config.note {
             let note = NoteParser::parse(&node)?;
-            println!("{note:?}");
+            let s = note::pretty::pretty(&note);
+            println!("{s}");
             return Ok(());
         }
 
