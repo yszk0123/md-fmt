@@ -6,6 +6,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
+use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
 use note::NotePrinter;
@@ -39,8 +40,16 @@ pub fn format(node: &Node) -> Result<String> {
 }
 
 pub fn run(config: &Config) -> Result<()> {
-    for file in config.files.iter() {
-        run_file(config, file)?;
+    if let Some(pattern) = &config.glob {
+        for entry in (glob(pattern)?).flatten() {
+            if entry.is_file() {
+                run_file(config, &entry)?;
+            }
+        }
+    } else {
+        for file in config.files.iter() {
+            run_file(config, file)?;
+        }
     }
 
     Ok(())

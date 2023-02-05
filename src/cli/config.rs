@@ -11,6 +11,9 @@ struct Args {
     #[arg(short, long)]
     file: Vec<PathBuf>,
 
+    #[arg(short, long)]
+    glob: Option<String>,
+
     /// Overwrite
     #[arg(short, long, default_value = "false")]
     write: bool,
@@ -27,6 +30,7 @@ struct Args {
 
 pub struct Config {
     pub files: Vec<PathBuf>,
+    pub glob: Option<String>,
     pub write: bool,
     pub md: bool,
     pub note: bool,
@@ -40,6 +44,7 @@ impl Config {
 
         Ok(Config {
             files: args.file.clone(),
+            glob: args.glob,
             write: args.write,
             md: args.md,
             note: args.note,
