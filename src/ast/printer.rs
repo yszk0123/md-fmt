@@ -20,7 +20,7 @@ impl AstPrinter {
             depth: 0,
             order: None,
         };
-        printer.print_root(node)
+        Ok(printer.print_root(node)?.trim().to_string())
     }
 
     fn print_root(&mut self, node: &Node) -> Result<String> {
