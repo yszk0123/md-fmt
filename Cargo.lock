@@ -440,6 +440,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "mdfmt-js"
+version = "0.1.0"
+dependencies = [
+ "mdfmt_core",
+]
+
+[[package]]
 name = "mdfmt_core"
 version = "0.1.0"
 dependencies = [
