@@ -1,0 +1,12 @@
+{
+    "name": "md-fmt",
+    "version": "0.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "https://github.com/yszk0123",
+    "license": "MIT"
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@md-fmt/obsidian",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "dev:plugin": "mkdir -p vault/.obsidian/plugins/test/ && sane 'cp main.js styles.css manifest.json vault/.obsidian/plugins/test/' --glob='{main.js,styles.css}'",
+    "build": "node esbuild.config.mjs production",
+    "lint": "run-p lint:*",
+    "lint:ts": "tsc --noEmit",
+    "lint:eslint": "eslint src",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
+  },
+  "keywords": [],
+  "author": "https://github.com/yszk0123",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/diff-match-patch": "^1.0.32",
+    "@types/node": "^16.11.6",
+    "@typescript-eslint/eslint-plugin": "5.29.0",
+    "@typescript-eslint/parser": "5.29.0",
+    "builtin-modules": "3.3.0",
+    "esbuild": "0.14.47",
+    "eslint": "8.30.0",
+    "eslint-import-resolver-typescript": "^3.5.2",
+    "eslint-plugin-import": "^2.26.0",
+    "npm-run-all": "^4.1.5",
+    "obsidian": "latest",
+    "prettier": "^2.8.1",
+    "sane": "^5.0.1",
+    "tslib": "2.4.0",
+    "typescript": "4.7.4"
+  },
+  "dependencies": {
+    "@codemirror/language": "^6.3.2",
+    "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.7.1",
+    "diff-match-patch": "^1.0.5",
+    "mdfmt-js": "workspace:*"
+  }
+}

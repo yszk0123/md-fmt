@@ -1,0 +1,11 @@
+{
+  "id": "mdfmt",
+  "name": "mdfmt plugin",
+  "version": "0.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "This is a mdfmt plugin for Obsidian.",
+  "author": "yszk0123",
+  "authorUrl": "https://github.com/yszk0123",
+  "fundingUrl": "https://obsidian.md/pricing",
+  "isDesktopOnly": false
+}
