@@ -16,6 +16,7 @@
   "author": "https://github.com/yszk0123",
   "license": "MIT",
   "devDependencies": {
+    "@types/diff-match-patch": "^1.0.32",
     "@types/node": "^16.11.6",
     "@typescript-eslint/eslint-plugin": "5.29.0",
     "@typescript-eslint/parser": "5.29.0",
@@ -33,8 +34,9 @@
   },
   "dependencies": {
     "@codemirror/language": "^6.3.2",
-    "@codemirror/view": "^6.7.1",
     "@codemirror/state": "^6.0.0",
+    "@codemirror/view": "^6.7.1",
+    "diff-match-patch": "^1.0.5",
     "mdfmt-js": "workspace:*"
   }
 }
