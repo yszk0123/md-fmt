@@ -64,6 +64,8 @@ impl AstPrinter {
                 indent(self.depth - 1),
                 if let Some(order) = self.order {
                     format!("{order}.")
+                } else if let Some(checked) = node.checked {
+                    format!("- [{}]", if checked { "x" } else { " " })
                 } else {
                     "-".to_owned()
                 },
