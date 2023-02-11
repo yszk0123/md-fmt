@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
-use mdfmt_core::{print_node, to_mdast_from_str};
+use mdfmt_core::format;
 use pretty_assertions::assert_eq;
 
 #[test]
@@ -17,7 +17,7 @@ fn markdown() -> Result<()> {
 
             let input = fs::read_to_string(path)
                 .with_context(|| format!("could not find input file `{}`", path.display()))?;
-            let actual = print_node(&to_mdast_from_str(&input)?)?;
+            let actual = format(input)?;
 
             let expected = fs::read_to_string(&output_path).with_context(|| {
                 format!("could not find output file `{}`", output_path.display())

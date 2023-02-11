@@ -28,13 +28,18 @@ static RE: Lazy<Regex> = Lazy::new(|| {
         .unwrap()
 });
 
+pub fn format(input: String) -> Result<String> {
+    let node = to_mdast_from_str(&input).with_context(|| anyhow!("could not parse file"))?;
+    print_node(&node)
+}
+
 // FIXME: Workaround
 // thread 'main' panicked at 'internal error: entered unreachable code: expected footnote refereence, image, or link on stack', /Users/yszk0123/.cargo/registry/src/github.com-1ecc6299db9ec823/markdown-1.0.0-alpha.5/src/to_mdast.rs:1271:14
 fn escape(s: &str) -> String {
     RE.replace_all(s, "`$0`").to_string()
 }
 
-pub fn to_mdast_from_str(s: &str) -> Result<Node> {
+fn to_mdast_from_str(s: &str) -> Result<Node> {
     to_mdast(
         &escape(s),
         &ParseOptions {
@@ -48,7 +53,7 @@ pub fn to_mdast_from_str(s: &str) -> Result<Node> {
     .map_err(|s| anyhow!(s))
 }
 
-pub fn print_node(node: &Node) -> Result<String> {
+fn print_node(node: &Node) -> Result<String> {
     let note = NoteParser::parse(node)?;
     let note = note.normalize()?;
     NotePrinter::print(&note)
