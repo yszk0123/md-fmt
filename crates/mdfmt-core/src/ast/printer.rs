@@ -8,6 +8,7 @@ use markdown::mdast::{
 
 const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
+const TRAILING_SEPARATORS: &[char] = &[',', '.', ';', ':'];
 
 pub struct AstPrinter {
     depth: u8,
@@ -29,7 +30,6 @@ impl AstPrinter {
             Node::Root(node) => self.map_children(&node.children, Some(NEWLINE)),
             Node::BlockQuote(node) => {
                 let s = self.map_children(&node.children, Some(NEWLINE))?;
-                println!("BLOCK_QUOTE {s:?}");
                 Ok(quote(s, self.depth))
             },
             Node::List(node) => node
@@ -83,6 +83,8 @@ impl AstPrinter {
                             r.map(|v| {
                                 if v.is_empty() {
                                     String::from("")
+                                } else if starts_with_trailing_separators(&v) {
+                                    v
                                 } else {
                                     format!(" {v}")
                                 }
@@ -202,4 +204,8 @@ fn quote(text: String, depth: u8) -> String {
 
 fn indent(n: u8) -> String {
     INDENT.repeat(n.into())
+}
+
+fn starts_with_trailing_separators(s: &str) -> bool {
+    s.starts_with(TRAILING_SEPARATORS)
 }
