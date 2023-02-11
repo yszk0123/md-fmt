@@ -48,7 +48,7 @@ pub fn to_mdast_from_str(s: &str) -> Result<Node> {
     .map_err(|s| anyhow!(s))
 }
 
-pub fn format(node: &Node) -> Result<String> {
+pub fn print_node(node: &Node) -> Result<String> {
     let note = NoteParser::parse(node)?;
     let note = note.normalize()?;
     NotePrinter::print(&note)
@@ -76,7 +76,7 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
 
     if config.check {
         let err = to_mdast_from_str(&content)
-            .and_then(|node| format(&node))
+            .and_then(|node| print_node(&node))
             .is_err();
         if err {
             println!("{}", file.display());
@@ -100,8 +100,8 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
         return Ok(());
     }
 
-    let content =
-        format(&node).with_context(|| format!("could not stringify file `{}`", file.display()))?;
+    let content = print_node(&node)
+        .with_context(|| format!("could not stringify file `{}`", file.display()))?;
 
     if config.write {
         fs::write(file, content)
