@@ -2,6 +2,7 @@ use std::iter::Peekable;
 use std::slice::Iter;
 
 use anyhow::{anyhow, Ok, Result};
+use itertools::Itertools;
 use markdown::mdast::{self as m, Paragraph};
 
 use crate::ast;
@@ -110,43 +111,72 @@ impl NoteParser {
         }
 
         let (first, rest) = block_quote.children.split_first().unwrap();
-        let (node, children, kind) = self.find_note_kind(first);
-        let lines = node
-            .into_iter()
-            .chain(children)
-            .map(ast::AstPrinter::print)
-            .chain(rest.iter().map(ast::AstPrinter::print))
-            .collect::<Result<Vec<String>>>()?;
+        let (kind, node) = self
+            .parse_card(first)
+            .unwrap_or_else(|| (NoteKind::default(), Some(first.clone())));
+        let lines = if let Some(node) = node {
+            [&[node], rest].concat()
+        } else {
+            rest.to_vec()
+        }
+        .iter()
+        .map(ast::AstPrinter::print)
+        .collect::<Result<Vec<String>>>()?;
 
         match kind {
-            Some(NoteKind::Toc) => Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref())),
-            _ => Ok(Block::card(
-                kind.unwrap_or(NoteKind::Note),
-                vec![Block::text(lines.join("\n"))],
-            )),
+            NoteKind::Toc => Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref())),
+            _ => Ok(Block::card(kind, vec![Block::text(lines.join("\n"))])),
         }
     }
 
-    fn find_note_kind<'a>(
-        &self,
-        node: &'a m::Node,
-    ) -> (Option<&'a m::Node>, &'a [m::Node], Option<NoteKind>) {
+    fn parse_card(&self, node: &m::Node) -> Option<(NoteKind, Option<m::Node>)> {
         if let m::Node::Paragraph(Paragraph { children, .. }) = node {
-            if let Some(m::Node::Text(m::Text { value, .. })) = children.first() {
-                let (_, rest) = children.split_first().unwrap();
-                match &value[..] {
-                    "[!note]" => (None, rest, Some(NoteKind::Note)),
-                    "[!question]" => (None, rest, Some(NoteKind::Question)),
-                    "[!quote]" => (None, rest, Some(NoteKind::Quote)),
-                    "[!summary]" => (None, rest, Some(NoteKind::Summary)),
-                    "[!toc]" => (None, rest, Some(NoteKind::Toc)),
-                    _ => (None, children, None),
+            if let Some((m::Node::Text(m::Text { value, .. }), rest)) = children.split_first() {
+                match self.parse_card_paragraph(value) {
+                    Some((kind, s)) => Some((
+                        kind,
+                        if s.is_empty() && rest.is_empty() {
+                            None
+                        } else {
+                            Some(m::Node::Paragraph(Paragraph {
+                                children: [
+                                    &[m::Node::Text(m::Text {
+                                        value: s,
+                                        position: None,
+                                    })],
+                                    rest,
+                                ]
+                                .concat(),
+                                position: None,
+                            }))
+                        },
+                    )),
+                    _ => None,
                 }
             } else {
-                (None, children, None)
+                None
             }
         } else {
-            (Some(node), &[], None)
+            None
+        }
+    }
+
+    // Example:
+    // > [!note]
+    // > content
+    fn parse_card_paragraph(&self, value: &str) -> Option<(NoteKind, String)> {
+        let mut lines = value.lines();
+        if let Some(v) = lines.next() {
+            match v {
+                "[!note]" => Some((NoteKind::Note, lines.join("\n"))),
+                "[!question]" => Some((NoteKind::Question, lines.join("\n"))),
+                "[!quote]" => Some((NoteKind::Quote, lines.join("\n"))),
+                "[!summary]" => Some((NoteKind::Summary, lines.join("\n"))),
+                "[!toc]" => Some((NoteKind::Toc, lines.join("\n"))),
+                _ => None,
+            }
+        } else {
+            None
         }
     }
 
@@ -260,11 +290,11 @@ mod tests {
         assert_eq!(
             NoteParser::parse(&root(vec![
                 block_quote(vec![paragraph(vec![text("foo")])]),
-                block_quote(vec![paragraph(vec![text("[!note]"), text("foo")])]),
-                block_quote(vec![paragraph(vec![text("[!summary]"), text("foo")])]),
-                block_quote(vec![paragraph(vec![text("[!quote]"), text("foo")])]),
-                block_quote(vec![paragraph(vec![text("[!question]"), text("foo")])]),
-                block_quote(vec![paragraph(vec![text("[!toc]"), text("- foo")])]),
+                block_quote(vec![paragraph(vec![text("[!note]\nfoo")])]),
+                block_quote(vec![paragraph(vec![text("[!summary]\nfoo")])]),
+                block_quote(vec![paragraph(vec![text("[!quote]\nfoo")])]),
+                block_quote(vec![paragraph(vec![text("[!question]\nfoo")])]),
+                block_quote(vec![paragraph(vec![text("[!toc]\n- foo")])]),
             ]))?,
             Note::new(
                 None,
