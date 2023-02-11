@@ -125,7 +125,7 @@ impl NoteParser {
 
         match kind {
             NoteKind::Toc => Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref())),
-            _ => Ok(Block::card(kind, vec![Block::text(lines.join("\n"))])),
+            _ => Ok(Block::card(kind, vec![Block::text(lines.join("\n\n"))])),
         }
     }
 

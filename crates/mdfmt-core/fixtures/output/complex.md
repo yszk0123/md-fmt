@@ -16,8 +16,10 @@ Hello, world!
 
 > [!note]
 > 88
+>
 > - 1
 > - 2
+>
 > 00
 
 - foo
