@@ -29,7 +29,6 @@ impl AstPrinter {
             Node::Root(node) => self.map_children(&node.children, Some(NEWLINE)),
             Node::BlockQuote(node) => {
                 let s = self.map_children(&node.children, Some(NEWLINE))?;
-                println!("BLOCK_QUOTE {s:?}");
                 Ok(quote(s, self.depth))
             },
             Node::List(node) => node
