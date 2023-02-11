@@ -440,7 +440,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mdfmt"
+name = "mdfmt_core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
