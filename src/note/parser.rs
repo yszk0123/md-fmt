@@ -113,12 +113,15 @@ impl NoteParser {
         let (first, rest) = block_quote.children.split_first().unwrap();
         let (kind, node) = self
             .parse_card(first)
-            .unwrap_or_else(|| (NoteKind::default(), first.clone()));
-        let lines = [&[node], rest]
-            .concat()
-            .iter()
-            .map(ast::AstPrinter::print)
-            .collect::<Result<Vec<String>>>()?;
+            .unwrap_or_else(|| (NoteKind::default(), Some(first.clone())));
+        let lines = if let Some(node) = node {
+            [&[node], rest].concat()
+        } else {
+            rest.to_vec()
+        }
+        .iter()
+        .map(ast::AstPrinter::print)
+        .collect::<Result<Vec<String>>>()?;
 
         match kind {
             NoteKind::Toc => Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref())),
@@ -126,23 +129,27 @@ impl NoteParser {
         }
     }
 
-    fn parse_card(&self, node: &m::Node) -> Option<(NoteKind, m::Node)> {
+    fn parse_card(&self, node: &m::Node) -> Option<(NoteKind, Option<m::Node>)> {
         if let m::Node::Paragraph(Paragraph { children, .. }) = node {
             if let Some((m::Node::Text(m::Text { value, .. }), rest)) = children.split_first() {
                 match self.parse_card_paragraph(value) {
                     Some((kind, s)) => Some((
                         kind,
-                        m::Node::Paragraph(Paragraph {
-                            children: [
-                                &[m::Node::Text(m::Text {
-                                    value: s,
-                                    position: None,
-                                })],
-                                rest,
-                            ]
-                            .concat(),
-                            position: None,
-                        }),
+                        if s.is_empty() && rest.is_empty() {
+                            None
+                        } else {
+                            Some(m::Node::Paragraph(Paragraph {
+                                children: [
+                                    &[m::Node::Text(m::Text {
+                                        value: s,
+                                        position: None,
+                                    })],
+                                    rest,
+                                ]
+                                .concat(),
+                                position: None,
+                            }))
+                        },
                     )),
                     _ => None,
                 }
