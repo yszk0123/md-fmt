@@ -124,7 +124,14 @@ impl NoteParser {
         .collect::<Result<Vec<String>>>()?;
 
         match kind {
-            NoteKind::Toc => Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref())),
+            NoteKind::Toc => {
+                let lines = lines
+                    .iter()
+                    .flat_map(|v| v.split('\n'))
+                    .map(String::from)
+                    .collect::<Vec<String>>();
+                Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref()))
+            },
             _ => Ok(Block::card(kind, vec![Block::text(lines.join("\n\n"))])),
         }
     }
