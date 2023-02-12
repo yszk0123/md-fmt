@@ -1,12 +1,13 @@
 use std::collections::BTreeMap;
 
 use anyhow::{Context, Result};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
+use serde_with::{formats::PreferMany, serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
 use yaml_rust::{YamlEmitter, YamlLoader};
 
 use super::model::NoteKind;
+use crate::note::flexible_date::FlexibleDate;
 use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
 
 #[derive(PartialEq, Serialize, Deserialize, Debug)]
@@ -52,8 +53,8 @@ pub struct Meta {
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub kind: Option<NoteKind>,
 
-    #[serde_as(as = "Option<FlexibleDateTime>")]
-    pub journal_date: Option<DateTime<Utc>>,
+    #[serde_as(as = "Option<FlexibleDate>")]
+    pub journal_date: Option<NaiveDate>,
 
     #[serde_as(as = "Option<FlexibleDateTime>")]
     pub created_at: Option<DateTime<Utc>>,
@@ -61,10 +62,10 @@ pub struct Meta {
     #[serde_as(as = "Option<FlexibleDateTime>")]
     pub updated_at: Option<DateTime<Utc>>,
 
-    #[serde_as(as = "Option<OneOrMany<_>>")]
+    #[serde_as(as = "Option<OneOrMany<_, PreferMany>>")]
     pub author: Option<Vec<String>>,
 
-    #[serde_as(as = "Option<OneOrMany<_>>")]
+    #[serde_as(as = "Option<OneOrMany<_, PreferMany>>")]
     pub tags: Option<Vec<String>>,
 
     #[serde(flatten)]
@@ -84,8 +85,8 @@ pub struct Bookmark {
 
     toc: Option<String>,
 
-    #[serde_as(as = "Option<FlexibleDateTime>")]
-    journal_date: Option<DateTime<Utc>>,
+    #[serde_as(as = "Option<FlexibleDate>")]
+    journal_date: Option<NaiveDate>,
 
     #[serde_as(as = "Option<FlexibleDateTime>")]
     created_at: Option<DateTime<Utc>>,
@@ -226,7 +227,6 @@ impl std::str::FromStr for NoteStatus {
 
 #[cfg(test)]
 mod tests {
-    use chrono::TimeZone;
     use pretty_assertions::assert_eq;
     use serde_json::json;
 
@@ -282,7 +282,7 @@ mod tests {
         let metadata = Meta {
             journal_date: None,
             bookmark: Some(Bookmark {
-                journal_date: Some(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap()),
+                journal_date: NaiveDate::from_ymd_opt(2000, 1, 1),
                 ..Default::default()
             }),
             ..Default::default()
@@ -290,7 +290,7 @@ mod tests {
         assert_eq!(
             metadata.normalize(),
             Some(Meta {
-                journal_date: Some(Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap()),
+                journal_date: NaiveDate::from_ymd_opt(2000, 1, 1),
                 bookmark: None,
                 ..Default::default()
             })

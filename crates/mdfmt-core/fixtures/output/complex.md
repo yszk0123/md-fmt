@@ -1,6 +1,7 @@
 ---
 title: foo
-tags: english
+tags:
+  - english
 ---
 > [!toc]
 > - aaa
