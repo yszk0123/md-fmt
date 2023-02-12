@@ -8,7 +8,7 @@ use markdown::mdast::{
 
 const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
-const TRAILING_SEPARATORS: &[char] = &[',', '.', ';', ':'];
+const TRAILING_SEPARATORS: &[char] = &[',', '.', ';', ':', '\n'];
 
 pub struct AstPrinter {
     depth: u8,
@@ -73,27 +73,22 @@ impl AstPrinter {
                 self.map_children(&node.children, None)?
             )),
             Node::Paragraph(node) => {
-                let s = node
-                    .children
-                    .iter()
-                    .map(|node| self.print_root(node).map(|v| v.trim().to_string()))
-                    .enumerate()
-                    .map(|(i, r)| {
-                        if i > 0 {
-                            r.map(|v| {
-                                if v.is_empty() {
-                                    String::from("")
-                                } else if starts_with_trailing_separators(&v) {
-                                    v
-                                } else {
-                                    format!(" {v}")
-                                }
-                            })
-                        } else {
-                            r
-                        }
-                    })
-                    .collect::<Result<String>>()?;
+                let mut ends_with_separators = false;
+                let mut s = String::new();
+                for (i, child) in node.children.iter().enumerate() {
+                    let v = self
+                        .print_root(child)
+                        .map(|v| v.trim_matches(' ').to_string())?;
+                    if i > 0
+                        && !v.is_empty()
+                        && !ends_with_separators
+                        && !starts_with_trailing_separators(&v)
+                    {
+                        s.push(' ');
+                    }
+                    s.push_str(&v);
+                    ends_with_separators = v.ends_with(&['\n', ' ']);
+                }
                 Ok(format!("{}\n", s.trim()))
             },
             Node::Emphasis(node) => {
