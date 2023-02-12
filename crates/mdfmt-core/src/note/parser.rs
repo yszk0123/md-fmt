@@ -60,7 +60,7 @@ impl NoteParser {
                     iter.next();
                     let title = self.parse_heading(h);
                     let children = self.parse_block(iter, *depth)?;
-                    res.push(Section::new(title, children));
+                    res.push(Section::new(&title, children));
                 },
                 _ => {
                     // Ignore Node
@@ -83,7 +83,7 @@ impl NoteParser {
                     iter.next();
                     let title = self.parse_heading(node);
                     let children = self.parse_block(iter, node.depth)?;
-                    res.push(Block::section(title, children));
+                    res.push(Block::section(&title, children));
                 },
                 m::Node::BlockQuote(node) => {
                     iter.next();
@@ -132,7 +132,7 @@ impl NoteParser {
                     .collect::<Vec<String>>();
                 Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref()))
             },
-            _ => Ok(Block::card(kind, vec![Block::text(lines.join("\n\n"))])),
+            _ => Ok(Block::card(kind, vec![Block::text(&lines.join("\n\n"))])),
         }
     }
 

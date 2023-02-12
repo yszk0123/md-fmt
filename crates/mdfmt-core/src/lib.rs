@@ -28,8 +28,8 @@ static RE: Lazy<Regex> = Lazy::new(|| {
         .unwrap()
 });
 
-pub fn format(input: String) -> Result<String> {
-    let node = to_mdast_from_str(&input).with_context(|| anyhow!("could not parse file"))?;
+pub fn format(input: &str) -> Result<String> {
+    let node = to_mdast_from_str(input).with_context(|| anyhow!("could not parse file"))?;
     print_node(&node)
 }
 

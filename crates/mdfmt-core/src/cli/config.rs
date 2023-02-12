@@ -56,7 +56,7 @@ impl Config {
                 .lines()
                 .map(|v| v.unwrap())
                 .flat_map(|line| {
-                    parse_quoted_args(line)
+                    parse_quoted_args(&line)
                         .iter()
                         .map(PathBuf::from)
                         .collect::<Vec<_>>()

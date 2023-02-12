@@ -112,14 +112,14 @@ impl Meta {
     pub fn to_md(&self) -> Result<String> {
         let s = serde_yaml::to_string(self)
             .with_context(|| "could not stringify front matter".to_string())?;
-        let s = self.fix_indent(s);
+        let s = self.fix_indent(&s);
         Ok(s)
     }
 
-    fn fix_indent(&self, input: String) -> String {
+    fn fix_indent(&self, input: &str) -> String {
         // Workaround
         // https://github.com/dtolnay/serde-yaml/issues/337
-        let docs = YamlLoader::load_from_str(&input).unwrap();
+        let docs = YamlLoader::load_from_str(input).unwrap();
         let mut out_str = String::new();
         let mut emitter = YamlEmitter::new(&mut out_str);
         emitter.dump(&docs[0]).unwrap();
@@ -153,7 +153,7 @@ impl Meta {
 }
 
 impl Bookmark {
-    pub fn toc(value: impl ToString) -> Self {
+    pub fn toc(value: &str) -> Self {
         Self {
             toc: Some(value.to_string()),
             ..Default::default()
@@ -180,7 +180,7 @@ impl Bookmark {
 
     pub fn parse_toc(&self) -> Result<Option<Toc>> {
         if let Some(v) = &self.toc {
-            let res = Toc::parse(v.to_string())?;
+            let res = Toc::parse(v)?;
             Ok(Some(res))
         } else {
             Ok(None)

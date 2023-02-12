@@ -17,7 +17,7 @@ fn markdown() -> Result<()> {
 
             let input = fs::read_to_string(path)
                 .with_context(|| format!("could not find input file `{}`", path.display()))?;
-            let actual = format(input)?;
+            let actual = format(&input)?;
 
             let expected = fs::read_to_string(&output_path).with_context(|| {
                 format!("could not find output file `{}`", output_path.display())
