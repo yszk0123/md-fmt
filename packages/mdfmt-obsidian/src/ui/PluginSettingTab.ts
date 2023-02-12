@@ -27,6 +27,13 @@ export class MdfmtPluginSettingTab extends PluginSettingTab {
         })
     );
 
+    new Setting(this.containerEl).setName('FormatOnSave').addToggle((toggle) =>
+      toggle.setValue(this.plugin.settings.formatOnSave).onChange(async (value) => {
+        this.plugin.settings.formatOnSave = value;
+        await this.plugin.saveSettings();
+      })
+    );
+
     new Setting(this.containerEl).setName('Debug').addToggle((toggle) =>
       toggle.setValue(this.plugin.settings.debug).onChange(async (value) => {
         this.plugin.settings.debug = value;
