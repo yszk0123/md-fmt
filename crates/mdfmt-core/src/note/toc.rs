@@ -54,6 +54,7 @@ impl Node {
     }
 }
 
+#[derive(Debug)]
 enum Line {
     Unknown,
     Block(usize, String),
@@ -103,7 +104,7 @@ impl Toc {
                         break;
                     }
 
-                    let (next_index, children) = Self::parse_line(parent, indent, lines, i + 1);
+                    let (next_index, children) = Self::parse_line(base, indent, lines, i + 1);
                     i = next_index;
                     res.push(Node::new(value, children));
                 },
@@ -237,9 +238,10 @@ mod tests {
         let toc = Toc::parse(
             indoc! {"
                 - aaa
-                  - bbb
-                    - ccc
-                - ddd
+                    - bbb
+                        - ccc
+                    - ddd
+                - eee
             "}
             .to_string(),
         )?;
@@ -248,9 +250,12 @@ mod tests {
             Toc::new(vec![
                 Node::new(
                     "aaa",
-                    vec![Node::new("bbb", vec![Node::new("ccc", vec![])]),]
+                    vec![
+                        Node::new("bbb", vec![Node::new("ccc", vec![])]),
+                        Node::new("ddd", vec![]),
+                    ]
                 ),
-                Node::new("ddd", vec![])
+                Node::new("eee", vec![])
             ])
         );
         Ok(())
