@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use anyhow::{Context, Result};
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
-use serde_with::{serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
+use serde_with::{formats::PreferMany, serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
 use yaml_rust::{YamlEmitter, YamlLoader};
 
 use super::model::NoteKind;
@@ -62,10 +62,10 @@ pub struct Meta {
     #[serde_as(as = "Option<FlexibleDateTime>")]
     pub updated_at: Option<DateTime<Utc>>,
 
-    #[serde_as(as = "Option<OneOrMany<_>>")]
+    #[serde_as(as = "Option<OneOrMany<_, PreferMany>>")]
     pub author: Option<Vec<String>>,
 
-    #[serde_as(as = "Option<OneOrMany<_>>")]
+    #[serde_as(as = "Option<OneOrMany<_, PreferMany>>")]
     pub tags: Option<Vec<String>>,
 
     #[serde(flatten)]

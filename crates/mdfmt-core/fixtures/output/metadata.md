@@ -1,7 +1,8 @@
 ---
 title: foo
 journalDate: 2000-01-01
-tags: one
+tags:
+  - one
 compound-key:
   - foo
   - bar
