@@ -7,6 +7,8 @@ use clap::Parser as ClaspParser;
 #[derive(ClaspParser, Debug)]
 #[command(version)]
 struct Args {
+    files: Option<Vec<PathBuf>>,
+
     /// Source
     #[arg(short, long)]
     file: Vec<PathBuf>,
@@ -43,7 +45,7 @@ impl Config {
             Args::try_parse_from(args).with_context(|| "could not parse arguments".to_string())?;
 
         Ok(Config {
-            files: args.file.clone(),
+            files: [args.files.unwrap_or_default(), args.file].concat(),
             glob: args.glob,
             write: args.write,
             md: args.md,
