@@ -1,15 +1,18 @@
-use std::path::PathBuf;
+use std::{io, path::PathBuf};
 
 use anyhow::{Context, Result};
 use clap::Parser as ClaspParser;
+
+use super::quoted_args::parse_quoted_args;
 
 /// Simple Markdown Formatter
 #[derive(ClaspParser, Debug)]
 #[command(version)]
 struct Args {
+    /// Files
     files: Option<Vec<PathBuf>>,
 
-    /// Source
+    /// Files
     #[arg(short, long)]
     file: Vec<PathBuf>,
 
@@ -28,6 +31,10 @@ struct Args {
 
     #[arg(long)]
     check: bool,
+
+    /// Read files from stdin
+    #[arg(long, default_value = "false")]
+    stdin: bool,
 }
 
 pub struct Config {
@@ -44,8 +51,23 @@ impl Config {
         let args =
             Args::try_parse_from(args).with_context(|| "could not parse arguments".to_string())?;
 
+        let files = if args.stdin {
+            io::stdin()
+                .lines()
+                .map(|v| v.unwrap())
+                .flat_map(|line| {
+                    parse_quoted_args(line)
+                        .iter()
+                        .map(PathBuf::from)
+                        .collect::<Vec<_>>()
+                })
+                .collect()
+        } else {
+            vec![]
+        };
+
         Ok(Config {
-            files: [args.files.unwrap_or_default(), args.file].concat(),
+            files: [args.files.unwrap_or_default(), args.file, files].concat(),
             glob: args.glob,
             write: args.write,
             md: args.md,
