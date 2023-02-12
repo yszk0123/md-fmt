@@ -1,6 +1,6 @@
 ---
 title: foo
-journalDate: "2000-01-01T00:00:00Z"
+journalDate: 2000-01-01
 tags: one
 compound-key:
   - foo

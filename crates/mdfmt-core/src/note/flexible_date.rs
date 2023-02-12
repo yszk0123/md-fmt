@@ -1,0 +1,124 @@
+use std::fmt;
+
+use anyhow::{anyhow, Result};
+use chrono::{DateTime, Datelike, FixedOffset, NaiveDate, Utc};
+use serde::{de, Deserializer, Serialize, Serializer};
+use serde_with::{DeserializeAs, SerializeAs};
+
+pub struct FlexibleDate;
+
+impl SerializeAs<NaiveDate> for FlexibleDate {
+    fn serialize_as<S>(value: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        value.serialize(serializer)
+    }
+}
+
+impl<'de> DeserializeAs<'de, NaiveDate> for FlexibleDate {
+    fn deserialize_as<D>(deserializer: D) -> Result<NaiveDate, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_str(DateVisitor)
+    }
+}
+
+struct DateVisitor;
+
+impl<'de> de::Visitor<'de> for DateVisitor {
+    type Value = NaiveDate;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a formatted date and time string or a unix timestamp")
+    }
+
+    fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+    where
+        E: de::Error,
+    {
+        if let Ok(t) =
+            DateTime::<FixedOffset>::parse_from_rfc3339(value).map(|dt| dt.with_timezone(&Utc))
+        {
+            if let Some(t) = NaiveDate::from_ymd_opt(t.year(), t.month(), t.day()) {
+                return Ok(t);
+            }
+        }
+        if let Ok(t) = NaiveDate::parse_from_str(value, "%Y-%m-%dT%H:%M:%S") {
+            return Ok(t);
+        }
+        if let Ok(t) = NaiveDate::parse_from_str(value, "%Y-%m-%d") {
+            return Ok(t);
+        }
+        if let Ok(t) = parse_yyyy_mm(value) {
+            return Ok(t);
+        }
+
+        Err(E::custom(""))
+    }
+}
+
+fn parse_yyyy_mm(s: &str) -> Result<NaiveDate> {
+    let mut ss = s.split('-');
+    let year = ss.next().ok_or_else(|| anyhow!(""))?.parse::<i32>()?;
+    let month = ss.next().ok_or_else(|| anyhow!(""))?.parse::<u32>()?;
+    NaiveDate::from_ymd_opt(year, month, 1).ok_or_else(|| anyhow!(""))
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::prelude::*;
+    use serde::Deserialize;
+    use serde_json::json;
+    use serde_with::serde_as;
+
+    use super::*;
+
+    #[serde_as]
+    #[derive(PartialEq, Serialize, Deserialize, Debug)]
+    struct Foo {
+        #[serde_as(as = "Option<FlexibleDate>")]
+        date: Option<NaiveDate>,
+    }
+
+    #[test]
+    fn it_should_parse_yyyy_mm() -> Result<()> {
+        let expected = Foo {
+            date: NaiveDate::from_ymd_opt(2000, 1, 1),
+        };
+        let actual: Foo = serde_json::from_value(json!({ "date": "2000-01" }))?;
+        assert_eq!(expected, actual);
+        Ok(())
+    }
+
+    #[test]
+    fn it_should_parse_naive_date() -> Result<()> {
+        let expected = Foo {
+            date: NaiveDate::from_ymd_opt(2000, 1, 1),
+        };
+        let actual: Foo = serde_json::from_value(json!({ "date": "2000-01-01" }))?;
+        assert_eq!(expected, actual);
+        Ok(())
+    }
+
+    #[test]
+    fn it_should_parse_naive_date_time() -> Result<()> {
+        let expected = Foo {
+            date: NaiveDate::from_ymd_opt(2000, 1, 1),
+        };
+        let actual: Foo = serde_json::from_value(json!({ "date": "2000-01-01T00:00:00" }))?;
+        assert_eq!(expected, actual);
+        Ok(())
+    }
+
+    #[test]
+    fn it_should_parse_date_time() -> Result<()> {
+        let expected = Foo {
+            date: NaiveDate::from_ymd_opt(2000, 1, 1),
+        };
+        let actual: Foo = serde_json::from_value(json!({ "date": "2000-01-01T00:00:00+00:00" }))?;
+        assert_eq!(expected, actual);
+        Ok(())
+    }
+}
