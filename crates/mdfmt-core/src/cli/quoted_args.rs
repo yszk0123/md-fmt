@@ -1,4 +1,4 @@
-pub fn parse_quoted_args(input: String) -> Vec<String> {
+pub fn parse_quoted_args(input: &str) -> Vec<String> {
     let mut chunks = vec![];
     let mut chunk = String::new();
     let mut chars = input.chars();
@@ -44,42 +44,33 @@ mod tests {
 
     #[test]
     fn empty() {
-        assert_eq!(parse_quoted_args(String::from("")), Vec::<String>::new())
+        assert_eq!(parse_quoted_args(""), Vec::<String>::new())
     }
 
     #[test]
     fn unquoted_string() {
-        assert_eq!(parse_quoted_args(String::from("foo")), vec!["foo"])
+        assert_eq!(parse_quoted_args("foo"), vec!["foo"])
     }
 
     #[test]
     fn quoted_string() {
-        assert_eq!(
-            parse_quoted_args(String::from("\"foo bar\"")),
-            vec!["foo bar"]
-        )
+        assert_eq!(parse_quoted_args("\"foo bar\""), vec!["foo bar"])
     }
 
     #[test]
     fn escaped_string() {
-        assert_eq!(
-            parse_quoted_args(String::from("\"fo\\\"o\"")),
-            vec!["fo\"o"]
-        )
+        assert_eq!(parse_quoted_args("\"fo\\\"o\""), vec!["fo\"o"])
     }
 
     #[test]
     fn multiple_unquoted_string() {
-        assert_eq!(
-            parse_quoted_args(String::from("foo bar")),
-            vec!["foo", "bar"]
-        )
+        assert_eq!(parse_quoted_args("foo bar"), vec!["foo", "bar"])
     }
 
     #[test]
     fn multiple_quoted_string() {
         assert_eq!(
-            parse_quoted_args(String::from("\"foo bar\" \"bar baz\"")),
+            parse_quoted_args("\"foo bar\" \"bar baz\""),
             vec!["foo bar", "bar baz"]
         )
     }
@@ -87,7 +78,7 @@ mod tests {
     #[test]
     fn multiple_escaped_string() {
         assert_eq!(
-            parse_quoted_args(String::from("\"foo b\\\"ar\" \"bar baz\"")),
+            parse_quoted_args("\"foo b\\\"ar\" \"bar baz\""),
             vec!["foo b\"ar", "bar baz"]
         )
     }

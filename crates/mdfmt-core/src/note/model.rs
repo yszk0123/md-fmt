@@ -59,7 +59,7 @@ pub enum Block {
 }
 
 impl Block {
-    pub fn section(title: impl ToString, children: Vec<Block>) -> Self {
+    pub fn section(title: &str, children: Vec<Block>) -> Self {
         Self::Section(Section {
             title: title.to_string(),
             children,
@@ -74,11 +74,11 @@ impl Block {
         Self::Card(Card { kind, children })
     }
 
-    pub fn single(text: impl ToString) -> Self {
+    pub fn single(text: &str) -> Self {
         Self::Single(text.to_string())
     }
 
-    pub fn text(text: impl ToString) -> Self {
+    pub fn text(text: &str) -> Self {
         Self::Text(text.to_string())
     }
 }
@@ -90,7 +90,7 @@ pub struct Section {
 }
 
 impl Section {
-    pub fn new(title: impl ToString, children: Vec<Block>) -> Self {
+    pub fn new(title: &str, children: Vec<Block>) -> Self {
         Self {
             title: title.to_string(),
             children,

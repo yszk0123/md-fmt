@@ -7,7 +7,7 @@ pub fn root(children: Vec<Node>) -> Node {
     })
 }
 
-pub fn yaml(value: impl ToString) -> Node {
+pub fn yaml(value: &str) -> Node {
     Node::Yaml(Yaml {
         value: value.to_string(),
         position: None,
@@ -29,7 +29,7 @@ pub fn block_quote(children: Vec<Node>) -> Node {
     })
 }
 
-pub fn text(value: impl ToString) -> Node {
+pub fn text(value: &str) -> Node {
     Node::Text(Text {
         value: value.to_string(),
         position: None,

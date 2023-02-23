@@ -66,7 +66,7 @@ impl Toc {
         Self(children)
     }
 
-    pub fn parse(s: String) -> Result<Self> {
+    pub fn parse(s: &str) -> Result<Self> {
         let lines: Vec<Line> = s.lines().map(Line::parse).collect();
         let (_, nodes) = Self::parse_line(0, 0, &lines, 0);
         Ok(Self(nodes))
@@ -194,7 +194,7 @@ impl Line {
 }
 
 impl Node {
-    pub fn new(value: impl ToString, children: Vec<Node>) -> Self {
+    pub fn new(value: &str, children: Vec<Node>) -> Self {
         Self {
             value: value.to_string(),
             children,
@@ -211,15 +211,12 @@ mod tests {
 
     #[test]
     fn sharp_style_heading() -> Result<()> {
-        let toc = Toc::parse(
-            indoc! {"
+        let toc = Toc::parse(indoc! {"
                 # aaa
                 ## bbb
                 ### ccc
                 # ddd
-            "}
-            .to_string(),
-        )?;
+            "})?;
         assert_eq!(
             toc,
             Toc::new(vec![
@@ -235,16 +232,13 @@ mod tests {
 
     #[test]
     fn bullet_style_heading() -> Result<()> {
-        let toc = Toc::parse(
-            indoc! {"
+        let toc = Toc::parse(indoc! {"
                 - aaa
                     - bbb
                         - ccc
                     - ddd
                 - eee
-            "}
-            .to_string(),
-        )?;
+            "})?;
         assert_eq!(
             toc,
             Toc::new(vec![
@@ -263,15 +257,12 @@ mod tests {
 
     #[test]
     fn number_list_style_heading() -> Result<()> {
-        let toc = Toc::parse(
-            indoc! {"
+        let toc = Toc::parse(indoc! {"
                 1. aaa
                   2. bbb
                     3. ccc
                 1. ddd
-            "}
-            .to_string(),
-        )?;
+            "})?;
         assert_eq!(
             toc,
             Toc::new(vec![
@@ -287,16 +278,13 @@ mod tests {
 
     #[test]
     fn mixed_list_style_heading() -> Result<()> {
-        let toc = Toc::parse(
-            indoc! {"
+        let toc = Toc::parse(indoc! {"
                 # aaa
                 ## bbb
                 - ccc
                   - ddd
                 # eee
-            "}
-            .to_string(),
-        )?;
+            "})?;
         assert_eq!(
             toc,
             Toc::new(vec![

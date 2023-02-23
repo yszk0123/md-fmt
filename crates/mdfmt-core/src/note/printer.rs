@@ -95,7 +95,7 @@ fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
             for child in children {
                 from_node(child, depth + 1, &mut subchunks)?;
             }
-            chunks.push(Chunk::Single(block_quote(subchunks.print())));
+            chunks.push(Chunk::Single(block_quote(&subchunks.print())));
             Ok(())
         },
 
