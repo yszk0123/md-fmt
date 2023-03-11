@@ -2,8 +2,8 @@
 use anyhow::{anyhow, Result};
 use itertools::Itertools;
 use markdown::mdast::{
-    AlignKind, Delete, FootnoteDefinition, FootnoteReference, Html, Image, Link, Node, Table,
-    TableCell, TableRow, Text,
+    AlignKind, Delete, FootnoteDefinition, FootnoteReference, Html, Image, InlineMath, Link, Math,
+    Node, Table, TableCell, TableRow, Text,
 };
 
 const INDENT: &str = "    ";
@@ -161,6 +161,8 @@ impl AstPrinter {
             // Literal
             Node::Html(Html { value, .. }) => Ok(value.to_owned()),
             Node::Text(Text { value, .. }) => Ok(value.to_owned()),
+            Node::Math(Math { value, .. }) => Ok(format!("$$\n{value}\n$$")),
+            Node::InlineMath(InlineMath { value, .. }) => Ok(format!("${value}$")),
             Node::Yaml(node) => Ok(format!("---\n{}---\n", node.value)),
             Node::FootnoteReference(FootnoteReference { identifier, .. }) => {
                 Ok(format!("[^{identifier}]"))

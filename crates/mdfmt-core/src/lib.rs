@@ -45,6 +45,8 @@ fn to_mdast_from_str(s: &str) -> Result<Node> {
         &ParseOptions {
             constructs: Constructs {
                 frontmatter: true,
+                math_flow: true,
+                math_text: true,
                 ..Constructs::gfm()
             },
             ..ParseOptions::gfm()
