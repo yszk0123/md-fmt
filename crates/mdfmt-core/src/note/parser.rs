@@ -58,7 +58,7 @@ impl NoteParser {
             match *node {
                 m::Node::Heading(h @ m::Heading { depth, .. }) if *depth == 1 => {
                     iter.next();
-                    let title = self.parse_heading(h);
+                    let title = self.parse_heading(h)?;
                     let children = self.parse_block(iter, *depth)?;
                     res.push(Section::new(&title, children));
                 },
@@ -81,7 +81,7 @@ impl NoteParser {
                 },
                 m::Node::Heading(node) => {
                     iter.next();
-                    let title = self.parse_heading(node);
+                    let title = self.parse_heading(node)?;
                     let children = self.parse_block(iter, node.depth)?;
                     res.push(Block::section(&title, children));
                 },
@@ -187,15 +187,14 @@ impl NoteParser {
         }
     }
 
-    fn parse_heading(&self, heading: &m::Heading) -> String {
-        heading
-            .children
-            .iter()
-            .flat_map(|node| match node {
-                m::Node::Text(m::Text { value, .. }) => Some(value.clone()),
-                _ => None,
-            })
-            .collect()
+    fn parse_heading(&self, heading: &m::Heading) -> Result<String> {
+        let mut res: Vec<String> = vec![];
+
+        for node in heading.children.iter() {
+            res.push(ast::AstPrinter::print(node)?);
+        }
+
+        Ok(res.join(" "))
     }
 }
 
