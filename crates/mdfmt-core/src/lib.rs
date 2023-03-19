@@ -62,16 +62,17 @@ fn print_node(node: &Node) -> Result<String> {
 }
 
 pub fn run(config: &Config) -> Result<()> {
-    if let Some(pattern) = &config.glob {
-        for entry in (glob(pattern)?).flatten() {
-            if entry.is_file() {
-                run_file(config, &entry)?;
-            }
-        }
+    let entries: Vec<PathBuf> = if let Some(pattern) = &config.glob {
+        (glob(pattern)?)
+            .flatten()
+            .filter(|e| e.is_file())
+            .collect::<Vec<PathBuf>>()
     } else {
-        for file in config.files.iter() {
-            run_file(config, file)?;
-        }
+        config.files.clone()
+    };
+
+    for entry in entries {
+        run_file(config, &entry)?;
     }
 
     Ok(())
