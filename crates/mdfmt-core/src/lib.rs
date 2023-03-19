@@ -1,5 +1,6 @@
 mod ast;
 pub mod cli;
+mod index;
 mod note;
 
 use std::fs;
@@ -17,6 +18,8 @@ pub use crate::ast::builder;
 pub use crate::ast::pretty::pretty;
 pub use crate::ast::printer;
 use crate::cli::config::Config;
+use crate::index::model::Index;
+use crate::index::printer::IndexPrinter;
 use crate::note::metadata::Metadata;
 pub use crate::note::toc;
 pub use crate::note::NoteParser;
@@ -71,8 +74,36 @@ pub fn run(config: &Config) -> Result<()> {
         config.files.clone()
     };
 
+    if config.index.is_some() {
+        run_index(config, &entries)?;
+        return Ok(());
+    }
+
     for entry in entries {
         run_file(config, &entry)?;
+    }
+
+    Ok(())
+}
+
+fn run_index(config: &Config, files: &[PathBuf]) -> Result<()> {
+    let mut indexes: Vec<Index> = vec![];
+    for file in files {
+        let content = fs::read_to_string(file)
+            .with_context(|| format!("could not read file `{}`", file.display()))?;
+
+        let node = to_mdast_from_str(&content)
+            .with_context(|| format!("could not parse file `{}`", file.display()))?;
+
+        let note = NoteParser::parse(&node)?.normalize()?;
+        indexes.push(Index::new(file, &note));
+    }
+
+    let content = IndexPrinter::print(&indexes)?;
+
+    if let Some(file) = &config.index {
+        fs::write(file, content).with_context(|| format!("could not write file `{}`", file))?;
+        return Ok(());
     }
 
     Ok(())

@@ -19,6 +19,9 @@ struct Args {
     #[arg(short, long)]
     glob: Option<String>,
 
+    #[arg(long)]
+    index: Option<String>,
+
     /// Overwrite
     #[arg(short, long, default_value = "false")]
     write: bool,
@@ -40,6 +43,7 @@ struct Args {
 pub struct Config {
     pub files: Vec<PathBuf>,
     pub glob: Option<String>,
+    pub index: Option<String>,
     pub write: bool,
     pub md: bool,
     pub note: bool,
@@ -69,6 +73,7 @@ impl Config {
         Ok(Config {
             files: [args.files.unwrap_or_default(), args.file, files].concat(),
             glob: args.glob,
+            index: args.index,
             write: args.write,
             md: args.md,
             note: args.note,
