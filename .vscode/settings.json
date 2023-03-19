@@ -2,6 +2,9 @@
     "[markdown]": {
         "editor.formatOnSave": false
     },
+    "[json]": {
+        "editor.formatOnSave": false
+    },
     "[rust]": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "rust-lang.rust-analyzer"

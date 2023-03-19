@@ -74,8 +74,9 @@ pub fn run(config: &Config) -> Result<()> {
         config.files.clone()
     };
 
-    if config.index.is_some() {
-        run_index(config, &entries)?;
+    if let Some(file) = &config.index {
+        let content = generate_index(&entries)?;
+        fs::write(file, content).with_context(|| format!("could not write file `{}`", file))?;
         return Ok(());
     }
 
@@ -86,7 +87,7 @@ pub fn run(config: &Config) -> Result<()> {
     Ok(())
 }
 
-fn run_index(config: &Config, files: &[PathBuf]) -> Result<()> {
+pub fn generate_index(files: &[PathBuf]) -> Result<String> {
     let mut indexes: Vec<Index> = vec![];
     for file in files {
         let content = fs::read_to_string(file)
@@ -99,14 +100,7 @@ fn run_index(config: &Config, files: &[PathBuf]) -> Result<()> {
         indexes.push(Index::new(file, &note));
     }
 
-    let content = IndexPrinter::print(&indexes)?;
-
-    if let Some(file) = &config.index {
-        fs::write(file, content).with_context(|| format!("could not write file `{}`", file))?;
-        return Ok(());
-    }
-
-    Ok(())
+    IndexPrinter::print(&indexes)
 }
 
 fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
