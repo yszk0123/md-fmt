@@ -1,5 +1,6 @@
 mod ast;
 pub mod cli;
+mod index;
 mod note;
 
 use std::fs;
@@ -17,6 +18,8 @@ pub use crate::ast::builder;
 pub use crate::ast::pretty::pretty;
 pub use crate::ast::printer;
 use crate::cli::config::Config;
+use crate::index::model::Index;
+use crate::index::printer::IndexPrinter;
 use crate::note::metadata::Metadata;
 pub use crate::note::toc;
 pub use crate::note::NoteParser;
@@ -62,19 +65,42 @@ fn print_node(node: &Node) -> Result<String> {
 }
 
 pub fn run(config: &Config) -> Result<()> {
-    if let Some(pattern) = &config.glob {
-        for entry in (glob(pattern)?).flatten() {
-            if entry.is_file() {
-                run_file(config, &entry)?;
-            }
-        }
+    let entries: Vec<PathBuf> = if let Some(pattern) = &config.glob {
+        (glob(pattern)?)
+            .flatten()
+            .filter(|e| e.is_file())
+            .collect::<Vec<PathBuf>>()
     } else {
-        for file in config.files.iter() {
-            run_file(config, file)?;
-        }
+        config.files.clone()
+    };
+
+    if let Some(file) = &config.index {
+        let content = generate_index(&entries)?;
+        fs::write(file, content).with_context(|| format!("could not write file `{}`", file))?;
+        return Ok(());
+    }
+
+    for entry in entries {
+        run_file(config, &entry)?;
     }
 
     Ok(())
+}
+
+pub fn generate_index(files: &[PathBuf]) -> Result<String> {
+    let mut indexes: Vec<Index> = vec![];
+    for file in files {
+        let content = fs::read_to_string(file)
+            .with_context(|| format!("could not read file `{}`", file.display()))?;
+
+        let node = to_mdast_from_str(&content)
+            .with_context(|| format!("could not parse file `{}`", file.display()))?;
+
+        let note = NoteParser::parse(&node)?.normalize()?;
+        indexes.push(Index::new(file, &note));
+    }
+
+    IndexPrinter::print(&indexes)
 }
 
 fn run_file(config: &Config, file: &PathBuf) -> Result<()> {

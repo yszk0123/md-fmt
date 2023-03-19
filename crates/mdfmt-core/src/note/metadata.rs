@@ -38,7 +38,7 @@ impl Metadata {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Default, PartialEq, Serialize, Deserialize, Debug)]
+#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
     pub title: Option<String>,
@@ -188,7 +188,7 @@ impl Bookmark {
     }
 }
 
-#[derive(PartialEq, Debug, Default, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone)]
 pub enum NoteStatus {
     #[default]
     Todo,
