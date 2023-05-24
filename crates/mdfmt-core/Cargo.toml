@@ -15,7 +15,7 @@ itertools = "0.10.5"
 markdown = "1.0.0-alpha.9"
 once_cell = "1.17.1"
 regex = "1.8.1"
-serde = { version = "1.0.162", features = ["derive"] }
+serde = { version = "1.0.163", features = ["derive"] }
 serde_json = { version = "1.0.96", features = ["raw_value"] }
 serde_with = { version = "3.0.0", features = ["json"] }
 serde_yaml = "0.9.21"
