@@ -8,4 +8,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 mdfmt_core = { path = "../mdfmt-core" }
-wasm-bindgen = "0.2.86"
+wasm-bindgen = "0.2.87"
