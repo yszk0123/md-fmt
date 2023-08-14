@@ -46,6 +46,7 @@ pub struct Meta {
     pub path: Option<String>,
     pub bookmark: Option<Bookmark>,
     pub link: Option<String>,
+    pub toc: Option<String>,
 
     #[serde_as(as = "Option<DisplayFromStr>")]
     pub status: Option<NoteStatus>,
@@ -142,12 +143,22 @@ impl Meta {
             updated_at: self.updated_at.or_else(|| bookmark?.updated_at),
             link: self.link.or_else(|| bookmark?.url.clone()),
             bookmark: self.bookmark.and_then(|v| v.normalize()),
+            toc: None,
             others: self.others,
         };
         if res == Self::default() {
             None
         } else {
             Some(res)
+        }
+    }
+
+    pub fn parse_toc(&self) -> Result<Option<Toc>> {
+        if let Some(v) = &self.toc {
+            let res = Toc::parse(v)?;
+            Ok(Some(res))
+        } else {
+            Ok(None)
         }
     }
 }

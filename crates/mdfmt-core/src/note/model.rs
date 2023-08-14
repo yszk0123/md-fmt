@@ -32,17 +32,24 @@ impl Note {
     }
 
     fn get_toc(&self) -> Result<Vec<Block>> {
-        if let Some(Metadata::Meta(Meta {
-            bookmark: Some(b), ..
-        })) = &self.metadata
-        {
-            if let Some(toc) = b.parse_toc()? {
-                Ok(vec![Block::toc(toc.flatten_ref())])
-            } else {
-                Ok(vec![])
-            }
-        } else {
-            Ok(vec![])
+        match &self.metadata {
+            Some(Metadata::Meta(Meta {
+                bookmark: Some(b), ..
+            })) => {
+                if let Some(toc) = b.parse_toc()? {
+                    Ok(vec![Block::toc(toc.flatten_ref())])
+                } else {
+                    Ok(vec![])
+                }
+            },
+            Some(Metadata::Meta(m)) => {
+                if let Some(toc) = m.parse_toc()? {
+                    Ok(vec![Block::toc(toc.flatten_ref())])
+                } else {
+                    Ok(vec![])
+                }
+            },
+            _ => Ok(vec![]),
         }
     }
 }
