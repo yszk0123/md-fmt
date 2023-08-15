@@ -38,14 +38,15 @@ impl NoteParser {
     }
 
     fn parse_metadata(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Option<Metadata>> {
-        if let Some(m::Node::Yaml(node)) = iter.peek() {
-            iter.next();
-            return Ok(Some(
-                Metadata::from_str(&node.value)
-                    .unwrap_or_else(|_| Metadata::Raw(node.value.to_owned())),
-            ));
-        }
-        Ok(None)
+        let Some(m::Node::Yaml(node)) = iter.peek() else {
+            return Ok(None)
+        };
+
+        iter.next();
+        Ok(Some(
+            Metadata::from_str(&node.value)
+                .unwrap_or_else(|_| Metadata::Raw(node.value.to_owned())),
+        ))
     }
 
     fn parse_head(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Vec<Block>> {
@@ -137,35 +138,36 @@ impl NoteParser {
     }
 
     fn parse_card(&self, node: &m::Node) -> Option<(NoteKind, Option<m::Node>)> {
-        if let m::Node::Paragraph(Paragraph { children, .. }) = node {
-            if let Some((m::Node::Text(m::Text { value, .. }), rest)) = children.split_first() {
-                match self.parse_card_paragraph(value) {
-                    Some((kind, s)) => Some((
-                        kind,
-                        if s.is_empty() && rest.is_empty() {
-                            None
-                        } else {
-                            Some(m::Node::Paragraph(Paragraph {
-                                children: [
-                                    &[m::Node::Text(m::Text {
-                                        value: s,
-                                        position: None,
-                                    })],
-                                    rest,
-                                ]
-                                .concat(),
-                                position: None,
-                            }))
-                        },
-                    )),
-                    _ => None,
-                }
-            } else {
-                None
-            }
-        } else {
-            None
-        }
+        let m::Node::Paragraph(Paragraph { children, .. }) = node else {
+            return None
+        };
+
+        let Some((m::Node::Text(m::Text { value, .. }), rest)) = children.split_first() else {
+            return None
+        };
+
+        let Some((kind, s)) = self.parse_card_paragraph(value) else {
+            return None
+        };
+
+        if s.is_empty() && rest.is_empty() {
+            return Some((kind, None));
+        };
+
+        Some((
+            kind,
+            Some(m::Node::Paragraph(Paragraph {
+                children: [
+                    &[m::Node::Text(m::Text {
+                        value: s,
+                        position: None,
+                    })],
+                    rest,
+                ]
+                .concat(),
+                position: None,
+            })),
+        ))
     }
 
     // Example:
@@ -173,17 +175,17 @@ impl NoteParser {
     // > content
     fn parse_card_paragraph(&self, value: &str) -> Option<(NoteKind, String)> {
         let mut lines = value.lines();
-        if let Some(v) = lines.next() {
-            match v {
-                "[!note]" => Some((NoteKind::Note, lines.join("\n"))),
-                "[!question]" => Some((NoteKind::Question, lines.join("\n"))),
-                "[!quote]" => Some((NoteKind::Quote, lines.join("\n"))),
-                "[!summary]" => Some((NoteKind::Summary, lines.join("\n"))),
-                "[!toc]" => Some((NoteKind::Toc, lines.join("\n"))),
-                _ => None,
-            }
-        } else {
-            None
+        let Some(v) = lines.next() else {
+            return None
+        };
+
+        match v {
+            "[!note]" => Some((NoteKind::Note, lines.join("\n"))),
+            "[!question]" => Some((NoteKind::Question, lines.join("\n"))),
+            "[!quote]" => Some((NoteKind::Quote, lines.join("\n"))),
+            "[!summary]" => Some((NoteKind::Summary, lines.join("\n"))),
+            "[!toc]" => Some((NoteKind::Toc, lines.join("\n"))),
+            _ => None,
         }
     }
 

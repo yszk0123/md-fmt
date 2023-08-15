@@ -154,12 +154,12 @@ impl Meta {
     }
 
     pub fn parse_toc(&self) -> Result<Option<Toc>> {
-        if let Some(v) = &self.toc {
-            let res = Toc::parse(v)?;
-            Ok(Some(res))
-        } else {
-            Ok(None)
-        }
+        let Some(v) = &self.toc else {
+            return Ok(None)
+        };
+
+        let res = Toc::parse(v)?;
+        Ok(Some(res))
     }
 }
 
@@ -190,12 +190,12 @@ impl Bookmark {
     }
 
     pub fn parse_toc(&self) -> Result<Option<Toc>> {
-        if let Some(v) = &self.toc {
-            let res = Toc::parse(v)?;
-            Ok(Some(res))
-        } else {
-            Ok(None)
-        }
+        let Some(v) = &self.toc else {
+            return Ok(None)
+        };
+
+        let res = Toc::parse(v)?;
+        Ok(Some(res))
     }
 }
 
