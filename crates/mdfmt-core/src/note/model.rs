@@ -77,8 +77,12 @@ impl Block {
         Self::Toc(children)
     }
 
-    pub fn card(kind: NoteKind, children: Vec<Block>) -> Self {
-        Self::Card(Card { kind, children })
+    pub fn card(kind: NoteKind, title: Option<String>, children: Vec<Block>) -> Self {
+        Self::Card(Card {
+            kind,
+            title,
+            children,
+        })
     }
 
     pub fn single(text: &str) -> Self {
@@ -108,6 +112,7 @@ impl Section {
 #[derive(PartialEq, Debug, Default, Clone)]
 pub struct Card {
     pub kind: NoteKind,
+    pub title: Option<String>,
     pub children: Vec<Block>,
 }
 

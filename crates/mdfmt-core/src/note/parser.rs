@@ -12,6 +12,14 @@ use crate::Metadata;
 
 pub struct NoteParser {}
 
+const KIND_LIST: &[(&str, &NoteKind)] = &[
+    ("[!note]", &NoteKind::Note),
+    ("[!question]", &NoteKind::Question),
+    ("[!quote]", &NoteKind::Quote),
+    ("[!summary]", &NoteKind::Summary),
+    ("[!toc]", &NoteKind::Toc),
+];
+
 impl NoteParser {
     pub fn parse(node: &m::Node) -> Result<Note> {
         let parser = Self {};
@@ -112,9 +120,9 @@ impl NoteParser {
         }
 
         let (first, rest) = block_quote.children.split_first().unwrap();
-        let (kind, node) = self
+        let (kind, title, node) = self
             .parse_card(first)
-            .unwrap_or_else(|| (NoteKind::default(), Some(first.clone())));
+            .unwrap_or_else(|| (NoteKind::default(), None, Some(first.clone())));
         let lines = if let Some(node) = node {
             [&[node], rest].concat()
         } else {
@@ -133,11 +141,15 @@ impl NoteParser {
                     .collect::<Vec<String>>();
                 Ok(Block::toc(Toc::parse_lines(lines)?.flatten_ref()))
             },
-            _ => Ok(Block::card(kind, vec![Block::text(&lines.join("\n\n"))])),
+            _ => Ok(Block::card(
+                kind,
+                title,
+                vec![Block::text(&lines.join("\n\n"))],
+            )),
         }
     }
 
-    fn parse_card(&self, node: &m::Node) -> Option<(NoteKind, Option<m::Node>)> {
+    fn parse_card(&self, node: &m::Node) -> Option<(NoteKind, Option<String>, Option<m::Node>)> {
         let m::Node::Paragraph(Paragraph { children, .. }) = node else {
             return None;
         };
@@ -146,16 +158,17 @@ impl NoteParser {
             return None;
         };
 
-        let Some((kind, s)) = self.parse_card_paragraph(value) else {
+        let Some((kind, title, s)) = self.parse_card_paragraph(value) else {
             return None;
         };
 
         if s.is_empty() && rest.is_empty() {
-            return Some((kind, None));
+            return Some((kind, None, None));
         };
 
         Some((
             kind,
+            title,
             Some(m::Node::Paragraph(Paragraph {
                 children: [
                     &[m::Node::Text(m::Text {
@@ -173,16 +186,25 @@ impl NoteParser {
     // Example:
     // > [!note]
     // > content
-    fn parse_card_paragraph(&self, value: &str) -> Option<(NoteKind, String)> {
+    fn parse_card_paragraph(&self, value: &str) -> Option<(NoteKind, Option<String>, String)> {
         let mut lines = value.lines();
-        match lines.next()? {
-            "[!note]" => Some((NoteKind::Note, lines.join("\n"))),
-            "[!question]" => Some((NoteKind::Question, lines.join("\n"))),
-            "[!quote]" => Some((NoteKind::Quote, lines.join("\n"))),
-            "[!summary]" => Some((NoteKind::Summary, lines.join("\n"))),
-            "[!toc]" => Some((NoteKind::Toc, lines.join("\n"))),
-            _ => None,
+        let (kind, title) = self.parse_card_kind(lines.next()?)?;
+        Some((kind.clone(), title, lines.join("\n")))
+    }
+
+    fn parse_card_kind(&self, line: &str) -> Option<(&NoteKind, Option<String>)> {
+        for (kind_str, kind) in KIND_LIST {
+            if line.starts_with(kind_str) {
+                let title = line.strip_prefix(kind_str)?.trim_start();
+                let title = if title.is_empty() {
+                    None
+                } else {
+                    Some(title.to_string())
+                };
+                return Some((kind, title));
+            }
         }
+        None
     }
 
     fn parse_heading(&self, heading: &m::Heading) -> Result<String> {
@@ -294,6 +316,7 @@ mod tests {
         assert_eq!(
             NoteParser::parse(&root(vec![
                 block_quote(vec![paragraph(vec![text("foo")])]),
+                block_quote(vec![paragraph(vec![text("[!note] title\nfoo")])]),
                 block_quote(vec![paragraph(vec![text("[!note]\nfoo")])]),
                 block_quote(vec![paragraph(vec![text("[!summary]\nfoo")])]),
                 block_quote(vec![paragraph(vec![text("[!quote]\nfoo")])]),
@@ -303,11 +326,16 @@ mod tests {
             Note::new(
                 None,
                 vec![
-                    Block::card(NoteKind::Note, vec![Block::text("foo")]),
-                    Block::card(NoteKind::Note, vec![Block::text("foo")]),
-                    Block::card(NoteKind::Summary, vec![Block::text("foo")]),
-                    Block::card(NoteKind::Quote, vec![Block::text("foo")]),
-                    Block::card(NoteKind::Question, vec![Block::text("foo")]),
+                    Block::card(NoteKind::Note, None, vec![Block::text("foo")]),
+                    Block::card(
+                        NoteKind::Note,
+                        Some("title".into()),
+                        vec![Block::text("foo")]
+                    ),
+                    Block::card(NoteKind::Note, None, vec![Block::text("foo")]),
+                    Block::card(NoteKind::Summary, None, vec![Block::text("foo")]),
+                    Block::card(NoteKind::Quote, None, vec![Block::text("foo")]),
+                    Block::card(NoteKind::Question, None, vec![Block::text("foo")]),
                     Block::toc(vec![FlattenNode(1, String::from("foo"))]),
                 ],
                 vec![]

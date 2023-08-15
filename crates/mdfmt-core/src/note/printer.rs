@@ -89,9 +89,20 @@ fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
             Ok(())
         },
 
-        Block::Card(Card { kind, children }) => {
+        Block::Card(Card {
+            kind,
+            title,
+            children,
+        }) => {
             let mut subchunks = ChunkPrinter::new();
-            subchunks.push(Chunk::Single(format!("[!{kind}]")));
+
+            let kind_line = if let Some(title) = title {
+                format!("[!{kind}] {title}")
+            } else {
+                format!("[!{kind}]")
+            };
+            subchunks.push(Chunk::Single(kind_line));
+
             for child in children {
                 from_node(child, depth + 1, &mut subchunks)?;
             }
@@ -236,16 +247,19 @@ mod tests {
             NotePrinter::print(&Note::new(
                 None,
                 vec![
-                    Block::card(NoteKind::default(), vec![]),
-                    Block::card(NoteKind::Note, vec![]),
-                    Block::card(NoteKind::Summary, vec![]),
-                    Block::card(NoteKind::Quote, vec![]),
-                    Block::card(NoteKind::Question, vec![]),
+                    Block::card(NoteKind::default(), None, vec![]),
+                    Block::card(NoteKind::Note, Some("title".into()), vec![]),
+                    Block::card(NoteKind::Note, None, vec![]),
+                    Block::card(NoteKind::Summary, None, vec![]),
+                    Block::card(NoteKind::Quote, None, vec![]),
+                    Block::card(NoteKind::Question, None, vec![]),
                 ],
                 vec![]
             ))?,
             indoc! {"
                 > [!note]
+
+                > [!note] title
 
                 > [!note]
 
