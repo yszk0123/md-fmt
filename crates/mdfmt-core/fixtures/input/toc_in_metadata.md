@@ -1,10 +1,9 @@
 ---
-bookmark:
-  toc: |-
-    # aaa
-    ## bbb
-    - ccc
-      - ddd
-    - eee
-    # fff
+toc: |-
+  # aaa
+  ## bbb
+  - ccc
+    - ddd
+  - eee
+  # fff
 ---
