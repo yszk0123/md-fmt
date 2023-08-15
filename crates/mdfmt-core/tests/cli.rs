@@ -9,16 +9,18 @@ use pretty_assertions::assert_eq;
 
 #[test]
 fn markdown() -> Result<()> {
-    let entries = fs::read_dir("fixtures/input")?
+    let entries = fs::read_dir("fixtures/format")?
         .map(|res| res.map(|e| e.path()))
         .collect::<std::result::Result<Vec<_>, std::io::Error>>()?;
-    let paths = entries.iter().filter(|v| v.is_file()).collect::<Vec<_>>();
+    let paths = entries.iter().filter(|v| v.is_dir()).collect::<Vec<_>>();
 
     for path in paths {
         if let Some(name) = path.file_name() {
-            let output_path = Path::new("fixtures/output").join(name);
+            let dir = Path::new("fixtures/format").join(name);
+            let input_path = dir.join("input.md");
+            let output_path = dir.join("output.md");
 
-            let input = fs::read_to_string(path)
+            let input = fs::read_to_string(&input_path)
                 .with_context(|| format!("could not find input file `{}`", path.display()))?;
             let actual = format(&input)?;
 
