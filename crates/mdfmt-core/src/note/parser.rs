@@ -39,7 +39,7 @@ impl NoteParser {
 
     fn parse_metadata(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Option<Metadata>> {
         let Some(m::Node::Yaml(node)) = iter.peek() else {
-            return Ok(None)
+            return Ok(None);
         };
 
         iter.next();
@@ -139,15 +139,15 @@ impl NoteParser {
 
     fn parse_card(&self, node: &m::Node) -> Option<(NoteKind, Option<m::Node>)> {
         let m::Node::Paragraph(Paragraph { children, .. }) = node else {
-            return None
+            return None;
         };
 
         let Some((m::Node::Text(m::Text { value, .. }), rest)) = children.split_first() else {
-            return None
+            return None;
         };
 
         let Some((kind, s)) = self.parse_card_paragraph(value) else {
-            return None
+            return None;
         };
 
         if s.is_empty() && rest.is_empty() {
@@ -175,9 +175,7 @@ impl NoteParser {
     // > content
     fn parse_card_paragraph(&self, value: &str) -> Option<(NoteKind, String)> {
         let mut lines = value.lines();
-        let Some(v) = lines.next() else {
-            return None
-        };
+        let Some(v) = lines.next() else { return None };
 
         match v {
             "[!note]" => Some((NoteKind::Note, lines.join("\n"))),
