@@ -175,7 +175,7 @@ impl NoteParser {
     // > content
     fn parse_card_paragraph(&self, value: &str) -> Option<(NoteKind, String)> {
         let mut lines = value.lines();
-        let Some(v) = lines.next() else { return None };
+        let v = lines.next()?;
 
         match v {
             "[!note]" => Some((NoteKind::Note, lines.join("\n"))),
