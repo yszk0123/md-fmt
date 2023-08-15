@@ -163,7 +163,7 @@ impl NoteParser {
         };
 
         if s.is_empty() && rest.is_empty() {
-            return Some((kind, None, None));
+            return Some((kind, title, None));
         };
 
         Some((
