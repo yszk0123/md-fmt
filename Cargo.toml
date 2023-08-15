@@ -4,3 +4,5 @@ members = [
     "crates/mdfmt-core",
     "crates/mdfmt-js"
 ]
+
+resolver = "2"

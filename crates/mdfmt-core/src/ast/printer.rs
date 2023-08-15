@@ -30,7 +30,7 @@ impl AstPrinter {
             Node::Root(node) => self.map_children(&node.children, Some(NEWLINE)),
             Node::BlockQuote(node) => {
                 let s = self.map_children(&node.children, Some(NEWLINE))?;
-                Ok(quote(&s, self.depth))
+                Ok(quote(&s))
             },
             Node::List(node) => node
                 .children
@@ -184,14 +184,14 @@ impl AstPrinter {
     }
 }
 
-fn quote(text: &str, depth: u8) -> String {
+fn quote(text: &str) -> String {
     text.trim_end()
         .split('\n')
         .map(|line| {
             if line.is_empty() {
-                format!("{}>", indent(depth))
+                ">".to_string()
             } else {
-                format!("{}> {}", indent(depth), line)
+                format!("> {}", line)
             }
         })
         .collect_vec()
