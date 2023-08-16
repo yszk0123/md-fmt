@@ -16,7 +16,17 @@ impl Printer for Note {
         from_yaml(&self.metadata, &mut chunks)?;
         from_body(&self.body, &mut chunks)?;
 
-        Ok(chunks.print().trim().to_string() + "\n")
+        Ok(chunks.print() + "\n")
+    }
+}
+
+impl Printer for Block {
+    fn print(&self) -> Result<String> {
+        let mut chunks = ChunkPrinter::new();
+
+        from_block(self, 1, &mut chunks)?;
+
+        Ok(chunks.print())
     }
 }
 

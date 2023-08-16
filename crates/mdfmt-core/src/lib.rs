@@ -13,7 +13,7 @@ use anyhow::{anyhow, Context, Result};
 use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
-use note::model::Note;
+use note::model::{Block, Note};
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
@@ -46,6 +46,10 @@ pub fn parse(input: &str) -> Result<Note> {
 }
 
 pub fn stringify(input: &Note) -> Result<String> {
+    input.print()
+}
+
+pub fn stringify_block(input: &Block) -> Result<String> {
     input.print()
 }
 
