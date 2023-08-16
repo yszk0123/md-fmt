@@ -528,6 +528,7 @@ dependencies = [
 name = "mdfmt-js"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "mdfmt_core",
  "serde-wasm-bindgen",
  "wasm-bindgen",
