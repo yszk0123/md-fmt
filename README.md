@@ -27,18 +27,14 @@ $ md-fmt hello-world.md --json | jq '.body[] | select(.type == "Section").value.
 
 ```rs
 use anyhow::Result;
-use mdfmt_core::{
-    format,
-    model::{Block, Section},
-    parse,
-};
+use mdfmt_core::{format, parse, Block, Section};
 
 fn main() -> Result<()> {
     let note = mdfmt_core::parse("# foo")?;
     for block in note.body {
         match block {
             Block::Section(Section { title, .. }) => {
-                println!("title: {title}", title);
+                println!("title: {title}");
             },
             _ => {},
         }

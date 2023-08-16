@@ -1,2 +1,4 @@
-pub mod model;
-pub mod printer;
+mod indexes;
+mod item;
+
+pub use {indexes::Indexes, item::Item};

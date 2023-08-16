@@ -6,10 +6,8 @@ use anyhow::{anyhow, Ok, Result};
 use itertools::Itertools;
 use markdown::mdast::{self as m, Paragraph};
 
-use crate::ast;
-use crate::metadata::Metadata;
-use crate::note::model::*;
-use crate::toc::Toc;
+use super::{block::Block, metadata::Metadata, note_data::Note, note_kind::NoteKind, toc::Toc};
+use crate::printer::Printer;
 
 pub struct NoteParser {}
 
@@ -84,12 +82,12 @@ impl NoteParser {
                 },
                 node @ m::Node::FootnoteDefinition(_) => {
                     iter.next();
-                    let s = ast::AstPrinter::print(node)?;
+                    let s = node.print(())?;
                     res.push(Block::Single(s.trim().to_string()));
                 },
                 node => {
                     iter.next();
-                    let s = ast::AstPrinter::print(node)?;
+                    let s = node.print(())?;
                     res.push(Block::Text(s.trim().to_string()));
                 },
             }
@@ -113,7 +111,7 @@ impl NoteParser {
             rest.to_vec()
         }
         .iter()
-        .map(ast::AstPrinter::print)
+        .map(|v| v.print(()))
         .collect::<Result<Vec<String>>>()?;
 
         match kind {
@@ -195,7 +193,7 @@ impl NoteParser {
         let mut res: Vec<String> = vec![];
 
         for node in heading.children.iter() {
-            res.push(ast::AstPrinter::print(node)?);
+            res.push(node.print(())?);
         }
 
         Ok(res.join(" "))
@@ -207,7 +205,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::{ast::builder::*, note::metadata::Meta, toc::FlattenNode};
+    use crate::{ast::builder::*, note::Meta, FlattenNode};
 
     #[test]
     fn text_to_invalid() {

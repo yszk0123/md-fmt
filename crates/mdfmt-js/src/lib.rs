@@ -1,4 +1,3 @@
-pub use mdfmt_core::model;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -10,6 +9,9 @@ pub fn format(input: &str) -> String {
 extern "C" {
     #[wasm_bindgen(typescript_type = "Note")]
     pub type Note;
+
+    #[wasm_bindgen(typescript_type = "Block")]
+    pub type Block;
 }
 
 #[wasm_bindgen]
@@ -21,6 +23,13 @@ pub fn parse(input: &str) -> Result<Note, JsError> {
 
 #[wasm_bindgen]
 pub fn stringify(input: Note) -> Result<String, JsError> {
+    let value = serde_wasm_bindgen::from_value(JsValue::from(input)).map_err(to_js_error)?;
+    let note = mdfmt_core::stringify(&value).map_err(to_js_error)?;
+    Ok(note)
+}
+
+#[wasm_bindgen(js_name = "stringifyBlock")]
+pub fn stringify_block(input: Block) -> Result<String, JsError> {
     let value = serde_wasm_bindgen::from_value(JsValue::from(input)).map_err(to_js_error)?;
     let note = mdfmt_core::stringify(&value).map_err(to_js_error)?;
     Ok(note)

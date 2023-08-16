@@ -1,7 +1,11 @@
 mod ast;
-pub mod cli;
+mod chunk;
+mod cli;
+mod date;
+mod debug_printer;
 mod index;
 mod note;
+mod printer;
 mod typescript_custom_section;
 
 use std::fs;
@@ -11,21 +15,11 @@ use anyhow::{anyhow, Context, Result};
 use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
-use note::model::Note;
-use note::NotePrinter;
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
-pub use crate::ast::builder;
-pub use crate::ast::pretty::pretty;
-pub use crate::ast::printer;
-use crate::cli::config::Config;
-use crate::index::model::Index;
-use crate::index::printer::IndexPrinter;
-pub use crate::note::metadata;
-pub use crate::note::model;
-pub use crate::note::toc;
-pub use crate::note::NoteParser;
+pub use crate::{ast::builder, cli::Config, index::Indexes, note::*};
+use crate::{debug_printer::DebugPrinter, printer::Printer};
 
 static RE: Lazy<Regex> = Lazy::new(|| {
     RegexBuilder::new(r"\[!\[[^]]*\]\([^)]*\)[^]]*\]\([^)]*\)")
@@ -45,7 +39,11 @@ pub fn parse(input: &str) -> Result<Note> {
 }
 
 pub fn stringify(input: &Note) -> Result<String> {
-    NotePrinter::print(input)
+    input.print(())
+}
+
+pub fn stringify_block(input: &Block) -> Result<String> {
+    input.print(BlockPrinterOptions { depth: 1 })
 }
 
 // FIXME: Workaround
@@ -71,9 +69,7 @@ fn to_mdast_from_str(s: &str) -> Result<Node> {
 }
 
 fn print_node(node: &Node) -> Result<String> {
-    let note = NoteParser::parse(node)?;
-    let note = note.normalize()?;
-    NotePrinter::print(&note)
+    NoteParser::parse(node)?.normalize()?.print(())
 }
 
 pub fn run(config: &Config) -> Result<()> {
@@ -100,7 +96,8 @@ pub fn run(config: &Config) -> Result<()> {
 }
 
 pub fn generate_index(files: &[PathBuf]) -> Result<String> {
-    let mut indexes: Vec<Index> = vec![];
+    let mut indexes = Indexes::new(vec![]);
+
     for file in files {
         let content = fs::read_to_string(file)
             .with_context(|| format!("could not read file `{}`", file.display()))?;
@@ -109,10 +106,10 @@ pub fn generate_index(files: &[PathBuf]) -> Result<String> {
             .with_context(|| format!("could not parse file `{}`", file.display()))?;
 
         let note = NoteParser::parse(&node)?.normalize()?;
-        indexes.push(Index::new(file, &note));
+        indexes.push(file, &note);
     }
 
-    IndexPrinter::print(&indexes)
+    indexes.print(())
 }
 
 fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
@@ -133,14 +130,14 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
         .with_context(|| format!("could not parse file `{}`", file.display()))?;
 
     if config.md {
-        let s = pretty(&node);
+        let s = node.debug_print(());
         println!("{s}");
         return Ok(());
     }
 
     if config.note {
         let note = NoteParser::parse(&node)?;
-        let s = note::pretty::pretty(&note);
+        let s = note.debug_print(());
         println!("{s}");
         return Ok(());
     }

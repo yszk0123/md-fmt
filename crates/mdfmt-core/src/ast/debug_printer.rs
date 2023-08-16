@@ -1,8 +1,14 @@
 use itertools::Itertools;
 use markdown::mdast::*;
 
-pub fn pretty(node: &Node) -> String {
-    pretty_inner(node, 0)
+use crate::debug_printer::DebugPrinter;
+
+impl DebugPrinter for Node {
+    type Options = ();
+
+    fn debug_print(&self, _options: Self::Options) -> String {
+        pretty_inner(self, 0)
+    }
 }
 
 fn pretty_inner(node: &Node, depth: usize) -> String {

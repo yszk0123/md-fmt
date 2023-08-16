@@ -7,9 +7,15 @@ use serde_with::{formats::PreferMany, serde_as, skip_serializing_none, DisplayFr
 use tsify::Tsify;
 use yaml_rust::{YamlEmitter, YamlLoader};
 
-use super::model::NoteKind;
-use crate::note::flexible_date::FlexibleDate;
-use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
+use super::{
+    toc::Toc,
+    visitor::{Visitor, VisitorContext},
+};
+use crate::{
+    chunk::Chunk,
+    date::{FlexibleDate, FlexibleDateTime},
+    note::NoteKind,
+};
 
 #[derive(PartialEq, Serialize, Deserialize, Debug, Tsify)]
 #[serde(tag = "type", content = "value")]
@@ -39,6 +45,13 @@ impl Metadata {
             Self::Meta(v) => v.normalize().map(Self::Meta),
             v => Some(v),
         }
+    }
+}
+
+impl Visitor for Metadata {
+    fn visit(&self, context: &mut VisitorContext) -> Result<()> {
+        context.push(Chunk::Single(format!("---\n{}---", self.to_md()?)));
+        Ok(())
     }
 }
 
@@ -248,6 +261,7 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+    use crate::NoteKind;
 
     #[test]
     fn normalize_empty() {
