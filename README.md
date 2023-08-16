@@ -9,14 +9,14 @@ Learn Rust by implementing a tiny Markdown formatter.
 
 ### CLI
 
-`hello-world.md``
+`hello-world.md`
 ```md
 # hello
 world!
 ```
 
 ```bash
-# Fromat
+# Format
 $ md-fmt hello-world.md --write
 # JSON
 $ md-fmt hello-world.md --json | jq '.body[] | select(.type == "Section").value.title'
