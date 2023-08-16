@@ -19,6 +19,13 @@ pub fn parse(input: &str) -> Result<Note, JsError> {
     Ok(Note::from(value))
 }
 
+#[wasm_bindgen]
+pub fn stringify(input: Note) -> Result<String, JsError> {
+    let value = serde_wasm_bindgen::from_value(JsValue::from(input)).map_err(to_js_error)?;
+    let note = mdfmt_core::stringify(&value).map_err(to_js_error)?;
+    Ok(note)
+}
+
 fn to_js_error(err: impl std::fmt::Display) -> JsError {
     JsError::new(&err.to_string())
 }

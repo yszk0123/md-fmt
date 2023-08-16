@@ -44,6 +44,10 @@ pub fn parse(input: &str) -> Result<Note> {
     NoteParser::parse(&node)
 }
 
+pub fn stringify(input: &Note) -> Result<String> {
+    NotePrinter::print(input)
+}
+
 // FIXME: Workaround
 // thread 'main' panicked at 'internal error: entered unreachable code: expected footnote refereence, image, or link on stack', $HOME/.cargo/registry/src/github.com-1ecc6299db9ec823/markdown-1.0.0-alpha.5/src/to_mdast.rs:1271:14
 fn escape(s: &str) -> String {
