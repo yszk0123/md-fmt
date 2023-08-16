@@ -12,6 +12,7 @@ use crate::note::flexible_date::FlexibleDate;
 use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
 
 #[derive(PartialEq, Serialize, Deserialize, Debug, Tsify)]
+#[serde(tag = "type", content = "value")]
 pub enum Metadata {
     Meta(Meta),
     Raw(String),

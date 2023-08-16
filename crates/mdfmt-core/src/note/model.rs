@@ -5,7 +5,7 @@ use tsify::Tsify;
 use crate::metadata::{Meta, Metadata};
 use crate::toc::FlattenNode;
 
-#[derive(PartialEq, Debug, Default, Tsify)]
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Tsify)]
 pub struct Note {
     pub metadata: Option<Metadata>,
     pub body: Vec<Block>,
@@ -49,7 +49,8 @@ impl Note {
     }
 }
 
-#[derive(PartialEq, Default, Debug, Clone, Tsify)]
+#[derive(PartialEq, Default, Debug, Clone, Serialize, Deserialize, Tsify)]
+#[serde(tag = "type", content = "value")]
 pub enum Block {
     #[default]
     Empty,
@@ -94,7 +95,7 @@ impl Block {
     }
 }
 
-#[derive(PartialEq, Debug, Default, Clone, Tsify)]
+#[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize, Tsify)]
 pub struct Section {
     pub title: String,
     pub children: Vec<Block>,
@@ -109,7 +110,7 @@ impl Section {
     }
 }
 
-#[derive(PartialEq, Debug, Default, Clone, Tsify)]
+#[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize, Tsify)]
 pub struct Card {
     pub kind: NoteKind,
     pub title: Option<String>,
