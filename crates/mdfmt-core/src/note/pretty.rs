@@ -7,11 +7,8 @@ pub fn pretty(note: &Note) -> String {
     let mut s = String::new();
 
     s.push_str(&format!("{:?}\n---\n", note.metadata));
-    for block in &note.head {
+    for block in note.body.iter() {
         s.push_str(&pretty_inner(block, 0));
-    }
-    for section in note.body.iter() {
-        s.push_str(&pretty_inner(&Block::Section(section.clone()), 0));
     }
 
     s
@@ -20,6 +17,11 @@ pub fn pretty(note: &Note) -> String {
 fn pretty_inner(node: &Block, depth: usize) -> String {
     match node {
         Block::Empty => String::new(),
+
+        Block::AnonymousSection(x) => {
+            let children = children_to_string(x, depth);
+            format!("{}[AnonymousSection]\n{children}\n", indent(depth))
+        },
 
         Block::Section(x) => {
             let children = children_to_string(&x.children, depth);
