@@ -1,10 +1,18 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 
-use super::card::Card;
-use super::note_kind::NoteKind;
-use super::section::Section;
-use super::toc::FlattenNode;
+use super::{
+    builder::*,
+    card::Card,
+    note_kind::NoteKind,
+    section::Section,
+    toc::FlattenNode,
+    visitor::{Visitor, VisitorContext},
+};
+use crate::chunk::Chunk;
+
+const INDENT: &str = "    ";
 
 #[derive(PartialEq, Default, Debug, Clone, Serialize, Deserialize, Tsify)]
 #[serde(tag = "type", content = "value")]
@@ -49,5 +57,78 @@ impl Block {
 
     pub fn text(text: &str) -> Self {
         Self::Text(text.to_string())
+    }
+}
+
+impl Visitor for Block {
+    fn visit(&self, context: &mut VisitorContext) -> Result<()> {
+        match self {
+            Block::Empty => Ok(()),
+
+            Block::AnonymousSection(children) => context.dive(|c| {
+                for child in children {
+                    child.visit(c)?;
+                }
+                Ok(())
+            }),
+
+            Block::Section(Section { title, children }) => {
+                context.push(Chunk::Single(heading(context.get_depth(), title)));
+                context.dive(|c| {
+                    for child in children {
+                        child.visit(c)?;
+                    }
+                    Ok(())
+                })
+            },
+
+            Block::Card(Card {
+                kind,
+                title,
+                children,
+            }) => {
+                let sub_context = &mut context.sub();
+                // let sub_context = &mut context.sub();
+
+                let kind_line = if let Some(title) = title {
+                    format!("[!{kind}] {title}")
+                } else {
+                    format!("[!{kind}]")
+                };
+                sub_context.push(Chunk::Single(kind_line));
+
+                sub_context.dive(|c| {
+                    for child in children {
+                        child.visit(c)?;
+                    }
+                    Ok(())
+                })?;
+
+                context.push(Chunk::Single(block_quote(&sub_context.print())));
+                Ok(())
+            },
+
+            Block::Text(node) => {
+                context.push(Chunk::Double(node.clone()));
+                Ok(())
+            },
+
+            Block::Single(node) => {
+                context.push(Chunk::Single(node.clone()));
+                Ok(())
+            },
+
+            Block::Toc(nodes) => {
+                let s = nodes
+                    .iter()
+                    .map(|FlattenNode(indent, value)| {
+                        format!("> {}- {}", INDENT.repeat(indent - 1), value)
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                context.push(Chunk::Double(format!("> [!toc]\n{s}")));
+                Ok(())
+            },
+        }
     }
 }

@@ -1,12 +1,8 @@
 use anyhow::Result;
 
 use super::visitor::{Visitor, VisitorContext};
-use super::{Block, Card, FlattenNode, Note, Section};
-use crate::chunk::Chunk;
-use crate::note::builder::*;
+use super::{Block, Note};
 use crate::printer::Printer;
-
-const INDENT: &str = "    ";
 
 impl Printer for Note {
     type Options = ();
@@ -38,79 +34,6 @@ impl Printer for Block {
         self.visit(context)?;
 
         Ok(context.print())
-    }
-}
-
-impl Visitor for Block {
-    fn visit(&self, context: &mut VisitorContext) -> Result<()> {
-        match self {
-            Block::Empty => Ok(()),
-
-            Block::AnonymousSection(children) => context.dive(|c| {
-                for child in children {
-                    child.visit(c)?;
-                }
-                Ok(())
-            }),
-
-            Block::Section(Section { title, children }) => {
-                context.push(Chunk::Single(heading(context.get_depth(), title)));
-                context.dive(|c| {
-                    for child in children {
-                        child.visit(c)?;
-                    }
-                    Ok(())
-                })
-            },
-
-            Block::Card(Card {
-                kind,
-                title,
-                children,
-            }) => {
-                let sub_context = &mut context.sub();
-                // let sub_context = &mut context.sub();
-
-                let kind_line = if let Some(title) = title {
-                    format!("[!{kind}] {title}")
-                } else {
-                    format!("[!{kind}]")
-                };
-                sub_context.push(Chunk::Single(kind_line));
-
-                sub_context.dive(|c| {
-                    for child in children {
-                        child.visit(c)?;
-                    }
-                    Ok(())
-                })?;
-
-                context.push(Chunk::Single(block_quote(&sub_context.print())));
-                Ok(())
-            },
-
-            Block::Text(node) => {
-                context.push(Chunk::Double(node.clone()));
-                Ok(())
-            },
-
-            Block::Single(node) => {
-                context.push(Chunk::Single(node.clone()));
-                Ok(())
-            },
-
-            Block::Toc(nodes) => {
-                let s = nodes
-                    .iter()
-                    .map(|FlattenNode(indent, value)| {
-                        format!("> {}- {}", INDENT.repeat(indent - 1), value)
-                    })
-                    .collect::<Vec<String>>()
-                    .join("\n");
-                context.push(Chunk::Double(format!("> [!toc]\n{s}")));
-                Ok(())
-            },
-        }
     }
 }
 
