@@ -1,6 +1,4 @@
-use mdfmt_core;
 pub use mdfmt_core::model;
-use serde_wasm_bindgen;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]

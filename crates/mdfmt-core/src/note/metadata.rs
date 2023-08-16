@@ -18,11 +18,15 @@ pub enum Metadata {
     Raw(String),
 }
 
-impl Metadata {
-    pub fn from_str(s: &str) -> Result<Self> {
+impl std::str::FromStr for Metadata {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
         Ok(Metadata::Meta(Meta::from_str(s)?))
     }
+}
 
+impl Metadata {
     pub fn to_md(&self) -> Result<String> {
         match self {
             Self::Meta(v) => v.to_md(),
@@ -107,11 +111,15 @@ pub struct Bookmark {
 #[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone, Tsify)]
 pub struct BookmarkId(String);
 
-impl Meta {
-    pub fn from_str(s: &str) -> Result<Self> {
+impl std::str::FromStr for Meta {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
         serde_yaml::from_str(s).with_context(|| "could not stringify front matter".to_string())
     }
+}
 
+impl Meta {
     pub fn to_md(&self) -> Result<String> {
         let s = serde_yaml::to_string(self)
             .with_context(|| "could not stringify front matter".to_string())?;

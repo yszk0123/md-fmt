@@ -1,5 +1,6 @@
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::str::FromStr;
 
 use anyhow::{anyhow, Ok, Result};
 use itertools::Itertools;
