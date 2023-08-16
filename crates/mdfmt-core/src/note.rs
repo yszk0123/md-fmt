@@ -18,7 +18,6 @@ pub use {
     note_kind::*,
     parser::NoteParser,
     pretty::pretty,
-    printer::BlockPrinterOptions,
     section::*,
     toc::{FlattenNode, Toc},
 };

@@ -1,7 +1,9 @@
 use anyhow::Result;
 
-use super::visitor::{Visitor, VisitorContext};
-use super::{Block, Note};
+use super::{
+    note_data::Note,
+    visitor::{Visitor, VisitorContext},
+};
 use crate::printer::Printer;
 
 impl Printer for Note {
@@ -21,30 +23,15 @@ impl Printer for Note {
     }
 }
 
-pub struct BlockPrinterOptions {
-    pub depth: u8,
-}
-
-impl Printer for Block {
-    type Options = BlockPrinterOptions;
-
-    fn print(&self, options: Self::Options) -> Result<String> {
-        let context = &mut VisitorContext::new(options.depth);
-
-        self.visit(context)?;
-
-        Ok(context.print())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
     use super::super::{
+        block::Block,
         metadata::{Bookmark, Meta, Metadata},
-        NoteKind,
+        note_kind::NoteKind,
     };
     use super::*;
 

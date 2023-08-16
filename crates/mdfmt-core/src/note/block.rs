@@ -10,7 +10,7 @@ use super::{
     toc::FlattenNode,
     visitor::{Visitor, VisitorContext},
 };
-use crate::chunk::Chunk;
+use crate::{chunk::Chunk, printer::Printer};
 
 const INDENT: &str = "    ";
 
@@ -130,5 +130,21 @@ impl Visitor for Block {
                 Ok(())
             },
         }
+    }
+}
+
+pub struct BlockPrinterOptions {
+    pub depth: u8,
+}
+
+impl Printer for Block {
+    type Options = BlockPrinterOptions;
+
+    fn print(&self, options: Self::Options) -> Result<String> {
+        let context = &mut VisitorContext::new(options.depth);
+
+        self.visit(context)?;
+
+        Ok(context.print())
     }
 }
