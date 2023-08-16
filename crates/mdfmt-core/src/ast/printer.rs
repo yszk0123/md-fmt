@@ -6,13 +6,23 @@ use markdown::mdast::{
     Node, Table, TableCell, TableRow, Text,
 };
 
+use crate::printer::Printer;
+
 const INDENT: &str = "    ";
 const NEWLINE: &str = "\n";
 const TRAILING_SEPARATORS: &[char] = &[',', '.', ';', ':', '\n'];
 
-pub struct AstPrinter {
+struct AstPrinter {
     depth: u8,
     order: Option<usize>,
+}
+
+impl Printer for Node {
+    type Options = ();
+
+    fn print(&self, _options: Self::Options) -> Result<String> {
+        AstPrinter::print(self)
+    }
 }
 
 impl AstPrinter {
