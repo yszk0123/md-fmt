@@ -1,5 +1,6 @@
 use anyhow::Result;
 
 pub trait Printer {
-    fn print(&self) -> Result<String>;
+    type Options;
+    fn print(&self, options: Self::Options) -> Result<String>;
 }

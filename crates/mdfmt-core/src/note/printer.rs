@@ -10,7 +10,9 @@ use crate::toc::FlattenNode;
 const INDENT: &str = "    ";
 
 impl Printer for Note {
-    fn print(&self) -> Result<String> {
+    type Options = ();
+
+    fn print(&self, _options: Self::Options) -> Result<String> {
         let mut chunks = ChunkPrinter::new();
 
         from_yaml(&self.metadata, &mut chunks)?;
@@ -20,11 +22,17 @@ impl Printer for Note {
     }
 }
 
+pub struct BlockPrinterOptions {
+    pub depth: u8,
+}
+
 impl Printer for Block {
-    fn print(&self) -> Result<String> {
+    type Options = BlockPrinterOptions;
+
+    fn print(&self, options: Self::Options) -> Result<String> {
         let mut chunks = ChunkPrinter::new();
 
-        from_block(self, 1, &mut chunks)?;
+        from_block(self, options.depth, &mut chunks)?;
 
         Ok(chunks.print())
     }
@@ -126,7 +134,7 @@ mod tests {
                 })),
                 vec![]
             )
-            .print()?,
+            .print(())?,
             indoc! {"
                 ---
                 title: foo
@@ -150,7 +158,7 @@ mod tests {
         )
         .normalize()?;
         assert_eq!(
-            &note.print()?,
+            &note.print(())?,
             indoc! {"
                 > [!toc]
                 > - aaa
@@ -163,7 +171,7 @@ mod tests {
     #[test]
     fn convert_head_text() -> Result<()> {
         assert_eq!(
-            Note::new(None, vec![Block::text("foo")]).print()?,
+            Note::new(None, vec![Block::text("foo")]).print(())?,
             indoc! {"
                 foo
             "},
@@ -181,7 +189,7 @@ mod tests {
                     vec![Block::text("foo")]
                 )])],
             )
-            .print()?,
+            .print(())?,
             indoc! {"
                 ## heading
                 foo
@@ -197,7 +205,7 @@ mod tests {
                 None,
                 vec![Block::section("heading", vec![Block::text("foo")])],
             )
-            .print()?,
+            .print(())?,
             indoc! {"
                 # heading
                 foo
@@ -209,7 +217,7 @@ mod tests {
     #[test]
     fn convert_body_text() -> Result<()> {
         assert_eq!(
-            Note::new(None, vec![Block::section("foo", vec![])]).print()?,
+            Note::new(None, vec![Block::section("foo", vec![])]).print(())?,
             indoc! {"
                 # foo
             "}
@@ -231,7 +239,7 @@ mod tests {
                     Block::card(NoteKind::Question, None, vec![]),
                 ],
             )
-            .print()?,
+            .print(())?,
             indoc! {"
                 > [!note]
 

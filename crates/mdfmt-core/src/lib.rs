@@ -14,6 +14,7 @@ use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
 use note::model::{Block, Note};
+use note::printer::BlockPrinterOptions;
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
@@ -46,11 +47,11 @@ pub fn parse(input: &str) -> Result<Note> {
 }
 
 pub fn stringify(input: &Note) -> Result<String> {
-    input.print()
+    input.print(())
 }
 
 pub fn stringify_block(input: &Block) -> Result<String> {
-    input.print()
+    input.print(BlockPrinterOptions { depth: 1 })
 }
 
 // FIXME: Workaround
@@ -76,7 +77,7 @@ fn to_mdast_from_str(s: &str) -> Result<Node> {
 }
 
 fn print_node(node: &Node) -> Result<String> {
-    NoteParser::parse(node)?.normalize()?.print()
+    NoteParser::parse(node)?.normalize()?.print(())
 }
 
 pub fn run(config: &Config) -> Result<()> {
