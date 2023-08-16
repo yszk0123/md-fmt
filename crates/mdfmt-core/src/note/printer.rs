@@ -1,11 +1,10 @@
 use anyhow::Result;
 
+use super::{Block, Card, FlattenNode, Note, Section};
 use crate::chunk::{Chunk, ChunkPrinter};
 use crate::note::builder::*;
 use crate::note::metadata::Metadata;
-use crate::note::model::*;
 use crate::printer::Printer;
-use crate::toc::FlattenNode;
 
 const INDENT: &str = "    ";
 
@@ -121,6 +120,7 @@ mod tests {
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
+    use super::super::NoteKind;
     use super::*;
     use crate::note::metadata::{Bookmark, Meta};
 

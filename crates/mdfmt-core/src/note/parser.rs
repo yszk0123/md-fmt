@@ -6,10 +6,11 @@ use anyhow::{anyhow, Ok, Result};
 use itertools::Itertools;
 use markdown::mdast::{self as m, Paragraph};
 
+use super::block::{Block, NoteKind};
+use super::metadata::Metadata;
+use super::note_data::Note;
+use super::toc::Toc;
 use crate::ast;
-use crate::metadata::Metadata;
-use crate::note::model::*;
-use crate::toc::Toc;
 
 pub struct NoteParser {}
 
@@ -207,7 +208,7 @@ mod tests {
     use pretty_assertions::assert_eq;
 
     use super::*;
-    use crate::{ast::builder::*, note::metadata::Meta, toc::FlattenNode};
+    use crate::{ast::builder::*, note::Meta, FlattenNode};
 
     #[test]
     fn text_to_invalid() {

@@ -1,6 +1,7 @@
 mod ast;
 mod chunk;
-pub mod cli;
+mod cli;
+mod date;
 mod index;
 mod note;
 mod printer;
@@ -11,22 +12,18 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
 use glob::glob;
+use index::Indexes;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
-use note::printer::BlockPrinterOptions;
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
-pub use crate::ast::builder;
-pub use crate::ast::pretty::pretty;
-use crate::cli::config::Config;
-use crate::index::model::Index;
-use crate::index::printer::IndexPrinter;
-pub use crate::note::metadata;
-pub use crate::note::model::*;
-pub use crate::note::toc;
-pub use crate::note::NoteParser;
 use crate::printer::Printer;
+pub use crate::{
+    ast::{builder, pretty},
+    cli::Config,
+    note::*,
+};
 
 static RE: Lazy<Regex> = Lazy::new(|| {
     RegexBuilder::new(r"\[!\[[^]]*\]\([^)]*\)[^]]*\]\([^)]*\)")
@@ -103,7 +100,8 @@ pub fn run(config: &Config) -> Result<()> {
 }
 
 pub fn generate_index(files: &[PathBuf]) -> Result<String> {
-    let mut indexes: Vec<Index> = vec![];
+    let mut indexes = Indexes::new(vec![]);
+
     for file in files {
         let content = fs::read_to_string(file)
             .with_context(|| format!("could not read file `{}`", file.display()))?;
@@ -112,10 +110,10 @@ pub fn generate_index(files: &[PathBuf]) -> Result<String> {
             .with_context(|| format!("could not parse file `{}`", file.display()))?;
 
         let note = NoteParser::parse(&node)?.normalize()?;
-        indexes.push(Index::new(file, &note));
+        indexes.push(file, &note);
     }
 
-    IndexPrinter::print(&indexes)
+    indexes.print(())
 }
 
 fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
@@ -143,7 +141,7 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
 
     if config.note {
         let note = NoteParser::parse(&node)?;
-        let s = note::pretty::pretty(&note);
+        let s = note::pretty(&note);
         println!("{s}");
         return Ok(());
     }

@@ -7,9 +7,8 @@ use serde_with::{formats::PreferMany, serde_as, skip_serializing_none, DisplayFr
 use tsify::Tsify;
 use yaml_rust::{YamlEmitter, YamlLoader};
 
-use super::model::NoteKind;
-use crate::note::flexible_date::FlexibleDate;
-use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
+use super::{NoteKind, Toc};
+use crate::date::{FlexibleDate, FlexibleDateTime};
 
 #[derive(PartialEq, Serialize, Deserialize, Debug, Tsify)]
 #[serde(tag = "type", content = "value")]

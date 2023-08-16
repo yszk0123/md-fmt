@@ -1,5 +1,4 @@
-use super::model::{Block, Note};
-use crate::toc::FlattenNode;
+use super::{Block, FlattenNode, Note};
 
 const INDENT: &str = "  ";
 

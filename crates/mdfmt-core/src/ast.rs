@@ -1,4 +1,5 @@
 pub mod builder;
-pub mod pretty;
-pub mod printer;
-pub use printer::AstPrinter;
+mod pretty;
+mod printer;
+
+pub use {pretty::pretty, printer::AstPrinter};
