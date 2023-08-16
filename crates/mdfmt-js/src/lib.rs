@@ -1,4 +1,3 @@
-pub use mdfmt_core::model;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
