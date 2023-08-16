@@ -5,7 +5,6 @@ mod metadata;
 mod note_data;
 mod note_kind;
 mod parser;
-mod pretty;
 mod section;
 mod toc;
 
@@ -16,7 +15,6 @@ pub use {
     note_data::*,
     note_kind::*,
     parser::NoteParser,
-    pretty::pretty,
     section::*,
     toc::{FlattenNode, Toc},
 };

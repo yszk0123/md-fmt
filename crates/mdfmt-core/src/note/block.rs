@@ -10,7 +10,7 @@ use super::{
     toc::FlattenNode,
     visitor::{Visitor, VisitorContext},
 };
-use crate::{chunk::Chunk, printer::Printer};
+use crate::{chunk::Chunk, debug_printer::DebugPrinter, printer::Printer};
 
 const INDENT: &str = "    ";
 
@@ -147,4 +147,67 @@ impl Printer for Block {
 
         Ok(context.print())
     }
+}
+
+impl DebugPrinter for Block {
+    type Options = usize;
+
+    fn debug_print(&self, depth: Self::Options) -> String {
+        match self {
+            Block::Empty => String::new(),
+
+            Block::AnonymousSection(x) => {
+                let children = children_to_string(x, depth);
+                format!("{}[AnonymousSection]\n{children}\n", indent(depth))
+            },
+
+            Block::Section(x) => {
+                let children = children_to_string(&x.children, depth);
+                format!("{}[Section] {}\n{children}\n", indent(depth), x.title)
+            },
+
+            Block::Card(x) => format!(
+                "{}[card] {}\n{}\n",
+                indent(depth),
+                &x.kind.to_string(),
+                children_to_string(&x.children, depth)
+            ),
+
+            Block::Toc(x) => format!(
+                "{}[toc]\n{}",
+                depth,
+                &x.iter()
+                    .map(|FlattenNode(i, text)| line(depth + i, text))
+                    .collect::<Vec<String>>()
+                    .join("\n"),
+            ),
+
+            // Literals.
+            Block::Text(x) => format!("{}\n", literal_to_string("Text", x, depth)),
+            Block::Single(x) => format!("{}\n", literal_to_string("Single", x, depth)),
+        }
+    }
+}
+
+fn children_to_string(children: &[Block], depth: usize) -> String {
+    line(
+        depth,
+        &children
+            .iter()
+            .map(|v| v.debug_print(depth + 1))
+            .collect::<Vec<String>>()
+            .join("\n"),
+    )
+}
+
+fn literal_to_string(name: &str, value: &String, depth: usize) -> String {
+    format!("{}[{}] {}", indent(depth), name, value)
+}
+
+fn line(n: usize, s: &String) -> String {
+    format!("{}{s}", indent(n))
+}
+
+fn indent(n: usize) -> String {
+    INDENT.repeat(n)
 }

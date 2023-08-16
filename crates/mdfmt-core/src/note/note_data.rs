@@ -7,7 +7,7 @@ use super::{
     metadata::{Meta, Metadata},
     visitor::{Visitor, VisitorContext},
 };
-use crate::printer::Printer;
+use crate::{debug_printer::DebugPrinter, printer::Printer};
 
 #[derive(PartialEq, Debug, Default, Serialize, Deserialize, Tsify)]
 pub struct Note {
@@ -213,5 +213,20 @@ mod tests {
             "}
         );
         Ok(())
+    }
+}
+
+impl DebugPrinter for Note {
+    type Options = ();
+
+    fn debug_print(&self, _options: Self::Options) -> String {
+        let mut s = String::new();
+
+        s.push_str(&format!("{:?}\n---\n", self.metadata));
+        for block in self.body.iter() {
+            s.push_str(&block.debug_print(0));
+        }
+
+        s
     }
 }

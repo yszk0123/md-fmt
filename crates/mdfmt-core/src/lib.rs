@@ -2,6 +2,7 @@ mod ast;
 mod chunk;
 mod cli;
 mod date;
+mod debug_printer;
 mod index;
 mod note;
 mod printer;
@@ -12,18 +13,18 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
 use glob::glob;
-use index::Indexes;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
-use crate::printer::Printer;
 pub use crate::{
     ast::{builder, pretty},
     cli::Config,
+    index::Indexes,
     note::*,
 };
+use crate::{debug_printer::DebugPrinter, printer::Printer};
 
 static RE: Lazy<Regex> = Lazy::new(|| {
     RegexBuilder::new(r"\[!\[[^]]*\]\([^)]*\)[^]]*\]\([^)]*\)")
@@ -141,7 +142,7 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
 
     if config.note {
         let note = NoteParser::parse(&node)?;
-        let s = note::pretty(&note);
+        let s = note.debug_print(());
         println!("{s}");
         return Ok(());
     }
