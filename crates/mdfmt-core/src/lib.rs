@@ -141,6 +141,13 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
         return Ok(());
     }
 
+    if config.json {
+        let note = NoteParser::parse(&node)?;
+        let s = serde_json::to_string_pretty(&note)?;
+        println!("{s}");
+        return Ok(());
+    }
+
     let content = print_node(&node)
         .with_context(|| format!("could not stringify file `{}`", file.display()))?;
 
