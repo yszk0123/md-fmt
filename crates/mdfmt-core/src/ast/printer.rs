@@ -169,7 +169,7 @@ impl AstPrinter {
             },
             Node::InlineCode(node) => Ok(format!("`{}`", node.value)),
             Node::ThematicBreak(_) => Ok("---\n".to_owned()),
-            Node::Image(Image { alt, url, .. }) => Ok(format!("![{alt}]({url})")),
+            Node::Image(Image { alt, url, .. }) => Ok(format!("![{alt}](<{url}>)")),
 
             node => Err(anyhow!("{:?} not supported syntax", node)),
         }

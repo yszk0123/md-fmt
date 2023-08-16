@@ -1,1 +1,1 @@
-![foo](/bar.png)
+![foo](</bar.png>)
