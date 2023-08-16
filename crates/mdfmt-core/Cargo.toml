@@ -20,7 +20,9 @@ serde_json = { version = "1.0.104", features = ["raw_value"] }
 serde_with = { version = "3.2.0", features = ["json"] }
 serde_yaml = "0.9.25"
 thiserror = "1.0.44"
+tsify = "0.4.5"
 yaml-rust = "0.4.5"
+wasm-bindgen = "0.2.87"
 
 [[bin]]
 path = "src/main.rs"
