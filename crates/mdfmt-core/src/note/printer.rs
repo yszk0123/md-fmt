@@ -62,20 +62,20 @@ fn from_yaml(metadata: &Option<Metadata>, chunks: &mut ChunkPrinter) -> Result<(
     Ok(())
 }
 
-fn from_body(children: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
-    for child in children {
-        from_node(child, 1, chunks)?;
+fn from_body(blocks: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
+    for block in blocks {
+        from_block(block, 1, chunks)?;
     }
     Ok(())
 }
 
-fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
-    match node {
+fn from_block(block: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
+    match block {
         Block::Empty => Ok(()),
 
         Block::AnonymousSection(children) => {
             for child in children {
-                from_node(child, depth + 1, chunks)?;
+                from_block(child, depth + 1, chunks)?;
             }
             Ok(())
         },
@@ -83,7 +83,7 @@ fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
         Block::Section(Section { title, children }) => {
             chunks.push(Chunk::Single(heading(depth, title)));
             for child in children {
-                from_node(child, depth + 1, chunks)?;
+                from_block(child, depth + 1, chunks)?;
             }
             Ok(())
         },
@@ -103,7 +103,7 @@ fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
             subchunks.push(Chunk::Single(kind_line));
 
             for child in children {
-                from_node(child, depth + 1, &mut subchunks)?;
+                from_block(child, depth + 1, &mut subchunks)?;
             }
             chunks.push(Chunk::Single(block_quote(&subchunks.print())));
             Ok(())
