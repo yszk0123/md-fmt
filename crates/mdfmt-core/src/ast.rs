@@ -1,5 +1,3 @@
 pub mod builder;
-mod pretty;
+mod debug_printer;
 mod printer;
-
-pub use pretty::pretty;

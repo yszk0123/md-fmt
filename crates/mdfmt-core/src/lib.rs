@@ -18,12 +18,7 @@ use markdown::{to_mdast, Constructs, ParseOptions};
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
-pub use crate::{
-    ast::{builder, pretty},
-    cli::Config,
-    index::Indexes,
-    note::*,
-};
+pub use crate::{ast::builder, cli::Config, index::Indexes, note::*};
 use crate::{debug_printer::DebugPrinter, printer::Printer};
 
 static RE: Lazy<Regex> = Lazy::new(|| {
@@ -135,7 +130,7 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
         .with_context(|| format!("could not parse file `{}`", file.display()))?;
 
     if config.md {
-        let s = pretty(&node);
+        let s = node.debug_print(());
         println!("{s}");
         return Ok(());
     }
