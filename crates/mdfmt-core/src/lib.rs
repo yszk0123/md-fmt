@@ -3,6 +3,7 @@ mod chunk;
 pub mod cli;
 mod index;
 mod note;
+mod printer;
 mod typescript_custom_section;
 
 use std::fs;
@@ -13,13 +14,11 @@ use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
 use note::model::Note;
-use note::NotePrinter;
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
 pub use crate::ast::builder;
 pub use crate::ast::pretty::pretty;
-pub use crate::ast::printer;
 use crate::cli::config::Config;
 use crate::index::model::Index;
 use crate::index::printer::IndexPrinter;
@@ -27,6 +26,7 @@ pub use crate::note::metadata;
 pub use crate::note::model;
 pub use crate::note::toc;
 pub use crate::note::NoteParser;
+use crate::printer::Printer;
 
 static RE: Lazy<Regex> = Lazy::new(|| {
     RegexBuilder::new(r"\[!\[[^]]*\]\([^)]*\)[^]]*\]\([^)]*\)")
@@ -46,7 +46,7 @@ pub fn parse(input: &str) -> Result<Note> {
 }
 
 pub fn stringify(input: &Note) -> Result<String> {
-    NotePrinter::print(input)
+    input.print()
 }
 
 // FIXME: Workaround
@@ -72,9 +72,7 @@ fn to_mdast_from_str(s: &str) -> Result<Node> {
 }
 
 fn print_node(node: &Node) -> Result<String> {
-    let note = NoteParser::parse(node)?;
-    let note = note.normalize()?;
-    NotePrinter::print(&note)
+    NoteParser::parse(node)?.normalize()?.print()
 }
 
 pub fn run(config: &Config) -> Result<()> {

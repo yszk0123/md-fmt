@@ -10,4 +10,3 @@ pub mod pretty;
 pub mod toc;
 
 pub use parser::NoteParser;
-pub use printer::NotePrinter;
