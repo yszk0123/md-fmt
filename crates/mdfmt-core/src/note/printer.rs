@@ -49,7 +49,6 @@ impl NotePrinter {
         let mut chunks = ChunkPrinter::new();
 
         from_yaml(&note.metadata, &mut chunks)?;
-        from_head(&note.head, &mut chunks)?;
         from_body(&note.body, &mut chunks)?;
 
         Ok(chunks.print().trim().to_string() + "\n")
@@ -63,16 +62,9 @@ fn from_yaml(metadata: &Option<Metadata>, chunks: &mut ChunkPrinter) -> Result<(
     Ok(())
 }
 
-fn from_head(children: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
-    for node in children {
-        from_node(node, 2, chunks)?;
-    }
-    Ok(())
-}
-
-fn from_body(children: &Vec<Section>, chunks: &mut ChunkPrinter) -> Result<()> {
+fn from_body(children: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
     for child in children {
-        from_node(&Block::Section(child.clone()), 1, chunks)?;
+        from_node(child, 1, chunks)?;
     }
     Ok(())
 }
@@ -80,6 +72,13 @@ fn from_body(children: &Vec<Section>, chunks: &mut ChunkPrinter) -> Result<()> {
 fn from_node(node: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
     match node {
         Block::Empty => Ok(()),
+
+        Block::AnonymousSection(children) => {
+            for child in children {
+                from_node(child, depth + 1, chunks)?;
+            }
+            Ok(())
+        },
 
         Block::Section(Section { title, children }) => {
             chunks.push(Chunk::Single(heading(depth, title)));
@@ -150,7 +149,6 @@ mod tests {
                     title: Some("foo".into()),
                     ..Default::default()
                 })),
-                vec![],
                 vec![]
             ))?,
             indoc! {"
@@ -173,7 +171,6 @@ mod tests {
                 ..Default::default()
             })),
             vec![],
-            vec![],
         )
         .normalize()?;
         assert_eq!(
@@ -190,7 +187,7 @@ mod tests {
     #[test]
     fn convert_head_text() -> Result<()> {
         assert_eq!(
-            NotePrinter::print(&Note::new(None, vec![Block::text("foo")], vec![]))?,
+            NotePrinter::print(&Note::new(None, vec![Block::text("foo")]))?,
             indoc! {"
                 foo
             "},
@@ -203,8 +200,10 @@ mod tests {
         assert_eq!(
             NotePrinter::print(&Note::new(
                 None,
-                vec![Block::section("heading", vec![Block::text("foo")])],
-                vec![]
+                vec![Block::anonymous_section(vec![Block::section(
+                    "heading",
+                    vec![Block::text("foo")]
+                )])],
             ))?,
             indoc! {"
                 ## heading
@@ -219,8 +218,7 @@ mod tests {
         assert_eq!(
             NotePrinter::print(&Note::new(
                 None,
-                vec![],
-                vec![Section::new("heading", vec![Block::text("foo")])],
+                vec![Block::section("heading", vec![Block::text("foo")])],
             ))?,
             indoc! {"
                 # heading
@@ -233,7 +231,7 @@ mod tests {
     #[test]
     fn convert_body_text() -> Result<()> {
         assert_eq!(
-            NotePrinter::print(&Note::new(None, vec![], vec![Section::new("foo", vec![])]))?,
+            NotePrinter::print(&Note::new(None, vec![Block::section("foo", vec![])]))?,
             indoc! {"
                 # foo
             "}
@@ -254,7 +252,6 @@ mod tests {
                     Block::card(NoteKind::Quote, None, vec![]),
                     Block::card(NoteKind::Question, None, vec![]),
                 ],
-                vec![]
             ))?,
             indoc! {"
                 > [!note]

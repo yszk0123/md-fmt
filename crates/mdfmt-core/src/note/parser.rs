@@ -32,14 +32,11 @@ impl NoteParser {
                 let mut iter = node.children.iter().peekable();
 
                 let metadata = self.parse_metadata(&mut iter)?;
-                let head = self.parse_head(&mut iter)?;
-                let body = self.parse_body(&mut iter)?;
+                let mut body = self.parse_head_block(&mut iter)?;
+                let rest = self.parse_block(&mut iter, 0)?;
+                body.extend(rest);
 
-                Ok(Note {
-                    metadata,
-                    head,
-                    body,
-                })
+                Ok(Note { metadata, body })
             },
             _ => Err(anyhow!("invalid")),
         }
@@ -57,28 +54,14 @@ impl NoteParser {
         ))
     }
 
-    fn parse_head(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Vec<Block>> {
-        self.parse_block(iter, 1)
-    }
+    fn parse_head_block(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Vec<Block>> {
+        let res: Vec<Block> = self.parse_block(iter, 1)?;
 
-    fn parse_body(&self, iter: &mut Peekable<Iter<m::Node>>) -> Result<Vec<Section>> {
-        let mut res: Vec<Section> = vec![];
-        while let Some(node) = iter.peek() {
-            match *node {
-                m::Node::Heading(h @ m::Heading { depth, .. }) if *depth == 1 => {
-                    iter.next();
-                    let title = self.parse_heading(h)?;
-                    let children = self.parse_block(iter, *depth)?;
-                    res.push(Section::new(&title, children));
-                },
-                _ => {
-                    // Ignore Node
-                    iter.next();
-                },
-            }
-        }
-
-        Ok(res)
+        Ok(if res.is_empty() {
+            vec![]
+        } else {
+            vec![Block::anonymous_section(res)]
+        })
     }
 
     fn parse_block(&self, iter: &mut Peekable<Iter<m::Node>>, min_depth: u8) -> Result<Vec<Block>> {
@@ -235,7 +218,10 @@ mod tests {
     fn text_to_note() -> Result<()> {
         assert_eq!(
             NoteParser::parse(&root(vec![text("foo")]))?,
-            Note::new(None, vec![Block::text("foo")], vec![]),
+            Note::new(
+                None,
+                vec![Block::anonymous_section(vec![Block::text("foo")])]
+            ),
         );
         Ok(())
     }
@@ -244,7 +230,13 @@ mod tests {
     fn heading_2_to_note() -> Result<()> {
         assert_eq!(
             NoteParser::parse(&root(vec![heading(2, vec![text("foo")])]))?,
-            Note::new(None, vec![Block::section("foo", vec![])], vec![]),
+            Note::new(
+                None,
+                vec![Block::anonymous_section(vec![Block::section(
+                    "foo",
+                    vec![]
+                )])]
+            ),
         );
         Ok(())
     }
@@ -253,7 +245,7 @@ mod tests {
     fn heading_1_to_note() -> Result<()> {
         assert_eq!(
             NoteParser::parse(&root(vec![heading(1, vec![text("foo")])]))?,
-            Note::new(None, vec![], vec![Section::new("foo", vec![])]),
+            Note::new(None, vec![Block::section("foo", vec![])]),
         );
         Ok(())
     }
@@ -267,8 +259,7 @@ mod tests {
             ]))?,
             Note::new(
                 None,
-                vec![],
-                vec![Section::new("foo", vec![Block::section("bar", vec![])])]
+                vec![Block::section("foo", vec![Block::section("bar", vec![])])]
             ),
         );
         Ok(())
@@ -285,10 +276,9 @@ mod tests {
             ]))?,
             Note::new(
                 None,
-                vec![],
                 vec![
-                    Section::new("aaa", vec![Block::section("bbb", vec![])]),
-                    Section::new("ccc", vec![Block::section("ddd", vec![])])
+                    Block::section("aaa", vec![Block::section("bbb", vec![])]),
+                    Block::section("ccc", vec![Block::section("ddd", vec![])])
                 ]
             ),
         );
@@ -304,8 +294,10 @@ mod tests {
             ]))?,
             Note::new(
                 None,
-                vec![Block::section("foo", vec![])],
-                vec![Section::new("bar", vec![])]
+                vec![
+                    Block::anonymous_section(vec![Block::section("foo", vec![])]),
+                    Block::section("bar", vec![])
+                ],
             ),
         );
         Ok(())
@@ -325,7 +317,7 @@ mod tests {
             ]))?,
             Note::new(
                 None,
-                vec![
+                vec![Block::anonymous_section(vec![
                     Block::card(NoteKind::Note, None, vec![Block::text("foo")]),
                     Block::card(
                         NoteKind::Note,
@@ -337,8 +329,7 @@ mod tests {
                     Block::card(NoteKind::Quote, None, vec![Block::text("foo")]),
                     Block::card(NoteKind::Question, None, vec![Block::text("foo")]),
                     Block::toc(vec![FlattenNode(1, String::from("foo"))]),
-                ],
-                vec![]
+                ])],
             )
         );
         Ok(())
@@ -353,7 +344,6 @@ mod tests {
                     title: Some("foo".into()),
                     ..Default::default()
                 })),
-                vec![],
                 vec![]
             )
         );
@@ -364,7 +354,10 @@ mod tests {
     fn root_to_note() -> Result<()> {
         assert_eq!(
             NoteParser::parse(&root(vec![text("foo")]))?,
-            Note::new(None, vec![Block::text("foo")], vec![])
+            Note::new(
+                None,
+                vec![Block::anonymous_section(vec![Block::text("foo")])]
+            )
         );
         Ok(())
     }

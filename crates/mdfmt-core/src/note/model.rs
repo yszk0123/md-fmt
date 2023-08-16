@@ -7,27 +7,21 @@ use crate::{toc::FlattenNode, Metadata};
 #[derive(PartialEq, Debug, Default)]
 pub struct Note {
     pub metadata: Option<Metadata>,
-    pub head: Vec<Block>,
-    pub body: Vec<Section>,
+    pub body: Vec<Block>,
 }
 
 impl Note {
-    pub fn new(metadata: Option<Metadata>, head: Vec<Block>, body: Vec<Section>) -> Self {
-        Self {
-            metadata,
-            head,
-            body,
-        }
+    pub fn new(metadata: Option<Metadata>, body: Vec<Block>) -> Self {
+        Self { metadata, body }
     }
 
     pub fn normalize(self) -> Result<Self> {
-        let mut head = self.get_toc()?;
-        head.extend(self.head);
+        let mut body = self.get_toc()?;
+        body.extend(self.body);
 
         Ok(Self {
             metadata: self.metadata.and_then(Metadata::normalize),
-            head,
-            body: self.body,
+            body,
         })
     }
 
@@ -58,6 +52,7 @@ impl Note {
 pub enum Block {
     #[default]
     Empty,
+    AnonymousSection(Vec<Block>),
     Section(Section),
     Card(Card),
     Text(String),
@@ -66,6 +61,10 @@ pub enum Block {
 }
 
 impl Block {
+    pub fn anonymous_section(children: Vec<Block>) -> Self {
+        Self::AnonymousSection(children)
+    }
+
     pub fn section(title: &str, children: Vec<Block>) -> Self {
         Self::Section(Section {
             title: title.to_string(),
