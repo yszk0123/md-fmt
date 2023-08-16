@@ -1,8 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 
-use super::block::Block;
-use super::note_kind::NoteKind;
+use super::{block::Block, note_kind::NoteKind};
 
 #[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize, Tsify)]
 pub struct Card {

@@ -3,8 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use super::item::Item;
-use crate::note::Note;
-use crate::printer::Printer;
+use crate::{note::Note, printer::Printer};
 
 pub struct Indexes {
     pub(super) data: Vec<Item>,
