@@ -2,6 +2,7 @@ mod ast;
 pub mod cli;
 mod index;
 mod note;
+mod typescript_custom_section;
 
 use std::fs;
 use std::path::PathBuf;
@@ -20,7 +21,8 @@ pub use crate::ast::printer;
 use crate::cli::config::Config;
 use crate::index::model::Index;
 use crate::index::printer::IndexPrinter;
-use crate::note::metadata::Metadata;
+pub use crate::note::metadata;
+pub use crate::note::model;
 pub use crate::note::toc;
 pub use crate::note::NoteParser;
 

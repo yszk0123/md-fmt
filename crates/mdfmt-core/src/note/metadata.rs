@@ -4,13 +4,14 @@ use anyhow::{Context, Result};
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{formats::PreferMany, serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
+use tsify::Tsify;
 use yaml_rust::{YamlEmitter, YamlLoader};
 
 use super::model::NoteKind;
 use crate::note::flexible_date::FlexibleDate;
 use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
 
-#[derive(PartialEq, Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Tsify)]
 pub enum Metadata {
     Meta(Meta),
     Raw(String),
@@ -38,7 +39,7 @@ impl Metadata {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone, Tsify)]
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
     pub title: Option<String>,
@@ -76,7 +77,7 @@ pub struct Meta {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone, Tsify)]
 #[serde(rename_all = "camelCase")]
 pub struct Bookmark {
     pub id: Option<BookmarkId>,
@@ -102,7 +103,7 @@ pub struct Bookmark {
     others: BTreeMap<String, serde_yaml::Value>,
 }
 
-#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone, Tsify)]
 pub struct BookmarkId(String);
 
 impl Meta {
@@ -195,7 +196,7 @@ impl Bookmark {
     }
 }
 
-#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone, Tsify)]
 pub enum NoteStatus {
     #[default]
     Todo,

@@ -1,10 +1,11 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use tsify::Tsify;
 
-use super::metadata::Meta;
-use crate::{toc::FlattenNode, Metadata};
+use crate::metadata::{Meta, Metadata};
+use crate::toc::FlattenNode;
 
-#[derive(PartialEq, Debug, Default)]
+#[derive(PartialEq, Debug, Default, Tsify)]
 pub struct Note {
     pub metadata: Option<Metadata>,
     pub body: Vec<Block>,
@@ -48,7 +49,7 @@ impl Note {
     }
 }
 
-#[derive(PartialEq, Default, Debug, Clone)]
+#[derive(PartialEq, Default, Debug, Clone, Tsify)]
 pub enum Block {
     #[default]
     Empty,
@@ -93,7 +94,7 @@ impl Block {
     }
 }
 
-#[derive(PartialEq, Debug, Default, Clone)]
+#[derive(PartialEq, Debug, Default, Clone, Tsify)]
 pub struct Section {
     pub title: String,
     pub children: Vec<Block>,
@@ -108,14 +109,14 @@ impl Section {
     }
 }
 
-#[derive(PartialEq, Debug, Default, Clone)]
+#[derive(PartialEq, Debug, Default, Clone, Tsify)]
 pub struct Card {
     pub kind: NoteKind,
     pub title: Option<String>,
     pub children: Vec<Block>,
 }
 
-#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone, Tsify)]
 pub enum NoteKind {
     #[default]
     Note,
