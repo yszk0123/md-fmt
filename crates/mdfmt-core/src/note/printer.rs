@@ -1,5 +1,6 @@
 use anyhow::Result;
 
+use crate::chunk::{Chunk, ChunkPrinter};
 use crate::note::builder::*;
 use crate::note::metadata::Metadata;
 use crate::note::model::*;
@@ -8,41 +9,6 @@ use crate::toc::FlattenNode;
 const INDENT: &str = "    ";
 
 pub struct NotePrinter {}
-
-enum Chunk {
-    Single(String),
-    Double(String),
-}
-
-struct ChunkPrinter(Vec<Chunk>);
-
-impl ChunkPrinter {
-    pub fn new() -> Self {
-        Self(vec![])
-    }
-
-    pub fn push(&mut self, v: Chunk) {
-        self.0.push(v);
-    }
-
-    pub fn print(&self) -> String {
-        let mut res = String::new();
-        for v in self.0.iter() {
-            match v {
-                Chunk::Single(s) => {
-                    res.push_str(s);
-                    res.push('\n');
-                },
-                Chunk::Double(s) => {
-                    res.push_str(s);
-                    res.push('\n');
-                    res.push('\n');
-                },
-            }
-        }
-        res.trim().to_string()
-    }
-}
 
 impl NotePrinter {
     pub fn print(note: &Note) -> Result<String> {

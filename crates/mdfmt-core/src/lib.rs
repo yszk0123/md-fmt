@@ -1,4 +1,5 @@
 mod ast;
+mod chunk;
 pub mod cli;
 mod index;
 mod note;
