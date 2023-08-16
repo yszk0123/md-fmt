@@ -1,14 +1,15 @@
 use std::iter::Peekable;
 use std::slice::Iter;
+use std::str::FromStr;
 
 use anyhow::{anyhow, Ok, Result};
 use itertools::Itertools;
 use markdown::mdast::{self as m, Paragraph};
 
 use crate::ast;
+use crate::metadata::Metadata;
 use crate::note::model::*;
 use crate::toc::Toc;
-use crate::Metadata;
 
 pub struct NoteParser {}
 

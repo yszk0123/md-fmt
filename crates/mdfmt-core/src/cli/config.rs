@@ -33,6 +33,9 @@ struct Args {
     note: bool,
 
     #[arg(long)]
+    json: bool,
+
+    #[arg(long)]
     check: bool,
 
     /// Read files from stdin
@@ -47,6 +50,7 @@ pub struct Config {
     pub write: bool,
     pub md: bool,
     pub note: bool,
+    pub json: bool,
     pub check: bool,
 }
 
@@ -77,6 +81,7 @@ impl Config {
             write: args.write,
             md: args.md,
             note: args.note,
+            json: args.json,
             check: args.check,
         })
     }

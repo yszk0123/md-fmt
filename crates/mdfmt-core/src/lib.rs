@@ -2,6 +2,7 @@ mod ast;
 pub mod cli;
 mod index;
 mod note;
+mod typescript_custom_section;
 
 use std::fs;
 use std::path::PathBuf;
@@ -10,6 +11,7 @@ use anyhow::{anyhow, Context, Result};
 use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
+use note::model::Note;
 use note::NotePrinter;
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
@@ -20,7 +22,8 @@ pub use crate::ast::printer;
 use crate::cli::config::Config;
 use crate::index::model::Index;
 use crate::index::printer::IndexPrinter;
-use crate::note::metadata::Metadata;
+pub use crate::note::metadata;
+pub use crate::note::model;
 pub use crate::note::toc;
 pub use crate::note::NoteParser;
 
@@ -34,6 +37,11 @@ static RE: Lazy<Regex> = Lazy::new(|| {
 pub fn format(input: &str) -> Result<String> {
     let node = to_mdast_from_str(input).with_context(|| anyhow!("could not parse file"))?;
     print_node(&node)
+}
+
+pub fn parse(input: &str) -> Result<Note> {
+    let node = to_mdast_from_str(input).with_context(|| anyhow!("could not parse"))?;
+    NoteParser::parse(&node)
 }
 
 // FIXME: Workaround
@@ -129,6 +137,13 @@ fn run_file(config: &Config, file: &PathBuf) -> Result<()> {
     if config.note {
         let note = NoteParser::parse(&node)?;
         let s = note::pretty::pretty(&note);
+        println!("{s}");
+        return Ok(());
+    }
+
+    if config.json {
+        let note = NoteParser::parse(&node)?;
+        let s = serde_json::to_string_pretty(&note)?;
         println!("{s}");
         return Ok(());
     }

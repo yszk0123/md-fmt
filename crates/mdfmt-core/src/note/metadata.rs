@@ -4,23 +4,29 @@ use anyhow::{Context, Result};
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{formats::PreferMany, serde_as, skip_serializing_none, DisplayFromStr, OneOrMany};
+use tsify::Tsify;
 use yaml_rust::{YamlEmitter, YamlLoader};
 
 use super::model::NoteKind;
 use crate::note::flexible_date::FlexibleDate;
 use crate::{note::flexible_date_time::FlexibleDateTime, toc::Toc};
 
-#[derive(PartialEq, Serialize, Deserialize, Debug)]
+#[derive(PartialEq, Serialize, Deserialize, Debug, Tsify)]
+#[serde(tag = "type", content = "value")]
 pub enum Metadata {
     Meta(Meta),
     Raw(String),
 }
 
-impl Metadata {
-    pub fn from_str(s: &str) -> Result<Self> {
+impl std::str::FromStr for Metadata {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
         Ok(Metadata::Meta(Meta::from_str(s)?))
     }
+}
 
+impl Metadata {
     pub fn to_md(&self) -> Result<String> {
         match self {
             Self::Meta(v) => v.to_md(),
@@ -38,7 +44,7 @@ impl Metadata {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone, Tsify)]
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
     pub title: Option<String>,
@@ -76,7 +82,7 @@ pub struct Meta {
 
 #[serde_as]
 #[skip_serializing_none]
-#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone, Tsify)]
 #[serde(rename_all = "camelCase")]
 pub struct Bookmark {
     pub id: Option<BookmarkId>,
@@ -102,14 +108,18 @@ pub struct Bookmark {
     others: BTreeMap<String, serde_yaml::Value>,
 }
 
-#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone)]
+#[derive(Default, PartialEq, Serialize, Deserialize, Debug, Clone, Tsify)]
 pub struct BookmarkId(String);
 
-impl Meta {
-    pub fn from_str(s: &str) -> Result<Self> {
+impl std::str::FromStr for Meta {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self> {
         serde_yaml::from_str(s).with_context(|| "could not stringify front matter".to_string())
     }
+}
 
+impl Meta {
     pub fn to_md(&self) -> Result<String> {
         let s = serde_yaml::to_string(self)
             .with_context(|| "could not stringify front matter".to_string())?;
@@ -195,7 +205,7 @@ impl Bookmark {
     }
 }
 
-#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone)]
+#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone, Tsify)]
 pub enum NoteStatus {
     #[default]
     Todo,
