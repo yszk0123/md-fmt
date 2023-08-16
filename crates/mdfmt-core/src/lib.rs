@@ -11,6 +11,7 @@ use anyhow::{anyhow, Context, Result};
 use glob::glob;
 use markdown::mdast::Node;
 use markdown::{to_mdast, Constructs, ParseOptions};
+use note::model::Note;
 use note::NotePrinter;
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
@@ -36,6 +37,11 @@ static RE: Lazy<Regex> = Lazy::new(|| {
 pub fn format(input: &str) -> Result<String> {
     let node = to_mdast_from_str(input).with_context(|| anyhow!("could not parse file"))?;
     print_node(&node)
+}
+
+pub fn parse(input: &str) -> Result<Note> {
+    let node = to_mdast_from_str(input).with_context(|| anyhow!("could not parse"))?;
+    NoteParser::parse(&node)
 }
 
 // FIXME: Workaround
