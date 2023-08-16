@@ -4,7 +4,6 @@ use super::visitor::{Visitor, VisitorContext};
 use super::{Block, Card, FlattenNode, Note, Section};
 use crate::chunk::Chunk;
 use crate::note::builder::*;
-use crate::note::metadata::Metadata;
 use crate::printer::Printer;
 
 const INDENT: &str = "    ";
@@ -39,13 +38,6 @@ impl Printer for Block {
         self.visit(context)?;
 
         Ok(context.print())
-    }
-}
-
-impl Visitor for Metadata {
-    fn visit(&self, context: &mut VisitorContext) -> Result<()> {
-        context.push(Chunk::Single(format!("---\n{}---", self.to_md()?)));
-        Ok(())
     }
 }
 
@@ -127,9 +119,11 @@ mod tests {
     use indoc::indoc;
     use pretty_assertions::assert_eq;
 
-    use super::super::NoteKind;
+    use super::super::{
+        metadata::{Bookmark, Meta, Metadata},
+        NoteKind,
+    };
     use super::*;
-    use crate::note::metadata::{Bookmark, Meta};
 
     #[test]
     fn convert_metadata() -> Result<()> {
