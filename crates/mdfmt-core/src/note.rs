@@ -6,7 +6,6 @@ mod note_data;
 mod note_kind;
 mod parser;
 mod pretty;
-mod printer;
 mod section;
 mod toc;
 
