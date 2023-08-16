@@ -14,8 +14,8 @@ impl Printer for Note {
     fn print(&self, _options: Self::Options) -> Result<String> {
         let mut chunks = ChunkPrinter::new();
 
-        from_yaml(&self.metadata, &mut chunks)?;
-        from_body(&self.body, &mut chunks)?;
+        visit_yaml(&self.metadata, &mut chunks)?;
+        visit_body(&self.body, &mut chunks)?;
 
         Ok(chunks.print() + "\n")
     }
@@ -31,33 +31,33 @@ impl Printer for Block {
     fn print(&self, options: Self::Options) -> Result<String> {
         let mut chunks = ChunkPrinter::new();
 
-        from_block(self, options.depth, &mut chunks)?;
+        visit_block(self, options.depth, &mut chunks)?;
 
         Ok(chunks.print())
     }
 }
 
-fn from_yaml(metadata: &Option<Metadata>, chunks: &mut ChunkPrinter) -> Result<()> {
+fn visit_yaml(metadata: &Option<Metadata>, chunks: &mut ChunkPrinter) -> Result<()> {
     if let Some(metadata) = metadata {
         chunks.push(Chunk::Single(format!("---\n{}---", metadata.to_md()?)));
     }
     Ok(())
 }
 
-fn from_body(blocks: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
+fn visit_body(blocks: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
     for block in blocks {
-        from_block(block, 1, chunks)?;
+        visit_block(block, 1, chunks)?;
     }
     Ok(())
 }
 
-fn from_block(block: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
+fn visit_block(block: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
     match block {
         Block::Empty => Ok(()),
 
         Block::AnonymousSection(children) => {
             for child in children {
-                from_block(child, depth + 1, chunks)?;
+                visit_block(child, depth + 1, chunks)?;
             }
             Ok(())
         },
@@ -65,7 +65,7 @@ fn from_block(block: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()>
         Block::Section(Section { title, children }) => {
             chunks.push(Chunk::Single(heading(depth, title)));
             for child in children {
-                from_block(child, depth + 1, chunks)?;
+                visit_block(child, depth + 1, chunks)?;
             }
             Ok(())
         },
@@ -85,7 +85,7 @@ fn from_block(block: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()>
             subchunks.push(Chunk::Single(kind_line));
 
             for child in children {
-                from_block(child, depth + 1, &mut subchunks)?;
+                visit_block(child, depth + 1, &mut subchunks)?;
             }
             chunks.push(Chunk::Single(block_quote(&subchunks.print())));
             Ok(())
