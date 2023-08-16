@@ -1,8 +1,10 @@
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use tsify::Tsify;
 
-use super::FlattenNode;
+use super::card::Card;
+use super::note_kind::NoteKind;
+use super::section::Section;
+use super::toc::FlattenNode;
 
 #[derive(PartialEq, Default, Debug, Clone, Serialize, Deserialize, Tsify)]
 #[serde(tag = "type", content = "value")]
@@ -47,64 +49,5 @@ impl Block {
 
     pub fn text(text: &str) -> Self {
         Self::Text(text.to_string())
-    }
-}
-
-#[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize, Tsify)]
-pub struct Section {
-    pub title: String,
-    pub children: Vec<Block>,
-}
-
-impl Section {
-    pub fn new(title: &str, children: Vec<Block>) -> Self {
-        Self {
-            title: title.to_string(),
-            children,
-        }
-    }
-}
-
-#[derive(PartialEq, Debug, Default, Clone, Serialize, Deserialize, Tsify)]
-pub struct Card {
-    pub kind: NoteKind,
-    pub title: Option<String>,
-    pub children: Vec<Block>,
-}
-
-#[derive(PartialEq, Debug, Default, Serialize, Deserialize, Clone, Tsify)]
-pub enum NoteKind {
-    #[default]
-    Note,
-    Summary,
-    Quote,
-    Question,
-    Toc,
-}
-
-impl std::fmt::Display for NoteKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match self {
-            Self::Note => write!(f, "note"),
-            Self::Summary => write!(f, "summary"),
-            Self::Quote => write!(f, "quote"),
-            Self::Question => write!(f, "question"),
-            Self::Toc => write!(f, "toc"),
-        }
-    }
-}
-
-impl std::str::FromStr for NoteKind {
-    type Err = std::convert::Infallible;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "note" => Ok(Self::Note),
-            "summary" => Ok(Self::Summary),
-            "quote" => Ok(Self::Quote),
-            "question" => Ok(Self::Question),
-            "toc" => Ok(Self::Toc),
-            _ => Ok(Self::Note),
-        }
     }
 }

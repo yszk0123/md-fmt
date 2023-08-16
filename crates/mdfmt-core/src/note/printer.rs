@@ -1,7 +1,8 @@
 use anyhow::Result;
 
+use super::visitor::{Visitor, VisitorContext};
 use super::{Block, Card, FlattenNode, Note, Section};
-use crate::chunk::{Chunk, ChunkPrinter};
+use crate::chunk::Chunk;
 use crate::note::builder::*;
 use crate::note::metadata::Metadata;
 use crate::printer::Printer;
@@ -12,12 +13,16 @@ impl Printer for Note {
     type Options = ();
 
     fn print(&self, _options: Self::Options) -> Result<String> {
-        let mut chunks = ChunkPrinter::new();
+        let context = &mut VisitorContext::new(1);
 
-        visit_yaml(&self.metadata, &mut chunks)?;
-        visit_body(&self.body, &mut chunks)?;
+        if let Some(metadata) = &self.metadata {
+            metadata.visit(context)?;
+        }
+        for block in &self.body {
+            block.visit(context)?;
+        }
 
-        Ok(chunks.print() + "\n")
+        Ok(context.print() + "\n")
     }
 }
 
@@ -29,89 +34,91 @@ impl Printer for Block {
     type Options = BlockPrinterOptions;
 
     fn print(&self, options: Self::Options) -> Result<String> {
-        let mut chunks = ChunkPrinter::new();
+        let context = &mut VisitorContext::new(options.depth);
 
-        visit_block(self, options.depth, &mut chunks)?;
+        self.visit(context)?;
 
-        Ok(chunks.print())
+        Ok(context.print())
     }
 }
 
-fn visit_yaml(metadata: &Option<Metadata>, chunks: &mut ChunkPrinter) -> Result<()> {
-    if let Some(metadata) = metadata {
-        chunks.push(Chunk::Single(format!("---\n{}---", metadata.to_md()?)));
+impl Visitor for Metadata {
+    fn visit(&self, context: &mut VisitorContext) -> Result<()> {
+        context.push(Chunk::Single(format!("---\n{}---", self.to_md()?)));
+        Ok(())
     }
-    Ok(())
 }
 
-fn visit_body(blocks: &Vec<Block>, chunks: &mut ChunkPrinter) -> Result<()> {
-    for block in blocks {
-        visit_block(block, 1, chunks)?;
-    }
-    Ok(())
-}
+impl Visitor for Block {
+    fn visit(&self, context: &mut VisitorContext) -> Result<()> {
+        match self {
+            Block::Empty => Ok(()),
 
-fn visit_block(block: &Block, depth: u8, chunks: &mut ChunkPrinter) -> Result<()> {
-    match block {
-        Block::Empty => Ok(()),
+            Block::AnonymousSection(children) => context.dive(|c| {
+                for child in children {
+                    child.visit(c)?;
+                }
+                Ok(())
+            }),
 
-        Block::AnonymousSection(children) => {
-            for child in children {
-                visit_block(child, depth + 1, chunks)?;
-            }
-            Ok(())
-        },
-
-        Block::Section(Section { title, children }) => {
-            chunks.push(Chunk::Single(heading(depth, title)));
-            for child in children {
-                visit_block(child, depth + 1, chunks)?;
-            }
-            Ok(())
-        },
-
-        Block::Card(Card {
-            kind,
-            title,
-            children,
-        }) => {
-            let mut subchunks = ChunkPrinter::new();
-
-            let kind_line = if let Some(title) = title {
-                format!("[!{kind}] {title}")
-            } else {
-                format!("[!{kind}]")
-            };
-            subchunks.push(Chunk::Single(kind_line));
-
-            for child in children {
-                visit_block(child, depth + 1, &mut subchunks)?;
-            }
-            chunks.push(Chunk::Single(block_quote(&subchunks.print())));
-            Ok(())
-        },
-
-        Block::Text(node) => {
-            chunks.push(Chunk::Double(node.clone()));
-            Ok(())
-        },
-
-        Block::Single(node) => {
-            chunks.push(Chunk::Single(node.clone()));
-            Ok(())
-        },
-
-        Block::Toc(nodes) => {
-            let s = nodes
-                .iter()
-                .map(|FlattenNode(indent, value)| {
-                    format!("> {}- {}", INDENT.repeat(indent - 1), value)
+            Block::Section(Section { title, children }) => {
+                context.push(Chunk::Single(heading(context.get_depth(), title)));
+                context.dive(|c| {
+                    for child in children {
+                        child.visit(c)?;
+                    }
+                    Ok(())
                 })
-                .collect::<Vec<String>>()
-                .join("\n");
-            chunks.push(Chunk::Double(format!("> [!toc]\n{s}")));
-            Ok(())
-        },
+            },
+
+            Block::Card(Card {
+                kind,
+                title,
+                children,
+            }) => {
+                let sub_context = &mut context.sub();
+                // let sub_context = &mut context.sub();
+
+                let kind_line = if let Some(title) = title {
+                    format!("[!{kind}] {title}")
+                } else {
+                    format!("[!{kind}]")
+                };
+                sub_context.push(Chunk::Single(kind_line));
+
+                sub_context.dive(|c| {
+                    for child in children {
+                        child.visit(c)?;
+                    }
+                    Ok(())
+                })?;
+
+                context.push(Chunk::Single(block_quote(&sub_context.print())));
+                Ok(())
+            },
+
+            Block::Text(node) => {
+                context.push(Chunk::Double(node.clone()));
+                Ok(())
+            },
+
+            Block::Single(node) => {
+                context.push(Chunk::Single(node.clone()));
+                Ok(())
+            },
+
+            Block::Toc(nodes) => {
+                let s = nodes
+                    .iter()
+                    .map(|FlattenNode(indent, value)| {
+                        format!("> {}- {}", INDENT.repeat(indent - 1), value)
+                    })
+                    .collect::<Vec<String>>()
+                    .join("\n");
+                context.push(Chunk::Double(format!("> [!toc]\n{s}")));
+                Ok(())
+            },
+        }
     }
 }
 

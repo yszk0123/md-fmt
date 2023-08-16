@@ -6,9 +6,10 @@ use anyhow::{anyhow, Ok, Result};
 use itertools::Itertools;
 use markdown::mdast::{self as m, Paragraph};
 
-use super::block::{Block, NoteKind};
+use super::block::Block;
 use super::metadata::Metadata;
 use super::note_data::Note;
+use super::note_kind::NoteKind;
 use super::toc::Toc;
 use crate::ast;
 
