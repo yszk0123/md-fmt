@@ -15,8 +15,8 @@ extern "C" {
 }
 
 #[wasm_bindgen]
-pub fn parse(input: &str) -> Result<Note, JsError> {
-    let note = mdfmt_core::parse(input).map_err(to_js_error)?;
+pub fn parse(input: String) -> Result<Note, JsError> {
+    let note = mdfmt_core::parse(&input.clone()).map_err(to_js_error)?;
     let value = serde_wasm_bindgen::to_value(&note).map_err(to_js_error)?;
     Ok(Note::from(value))
 }
