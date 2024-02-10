@@ -44,12 +44,12 @@ impl<'de> de::Visitor<'de> for DateTimeVisitor {
             return Ok(t);
         }
         if let Ok(t) = NaiveDateTime::parse_from_str(value, "%Y-%m-%dT%H:%M:%S") {
-            return Ok(DateTime::<Utc>::from_utc(t, Utc));
+            return Ok(DateTime::from_naive_utc_and_offset(t, Utc));
         }
         if let Ok(t) = NaiveDate::parse_from_str(value, "%Y-%m-%d") {
             let t = t
                 .and_hms_opt(0, 0, 0)
-                .map(|t| DateTime::<Utc>::from_utc(t, Utc));
+                .map(|t| DateTime::from_naive_utc_and_offset(t, Utc));
             if let Some(t) = t {
                 return Ok(t);
             }
@@ -57,7 +57,7 @@ impl<'de> de::Visitor<'de> for DateTimeVisitor {
         if let Ok(t) = parse_yyyy_mm(value) {
             let t = t
                 .and_hms_opt(0, 0, 0)
-                .map(|t| DateTime::<Utc>::from_utc(t, Utc));
+                .map(|t| DateTime::from_naive_utc_and_offset(t, Utc));
             if let Some(t) = t {
                 return Ok(t);
             }
