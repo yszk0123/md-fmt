@@ -10,6 +10,7 @@ pub enum NoteKind {
     Quote,
     Question,
     Toc,
+    Todo,
 }
 
 impl std::fmt::Display for NoteKind {
@@ -20,6 +21,7 @@ impl std::fmt::Display for NoteKind {
             Self::Quote => write!(f, "quote"),
             Self::Question => write!(f, "question"),
             Self::Toc => write!(f, "toc"),
+            Self::Todo => write!(f, "todo"),
         }
     }
 }
@@ -34,6 +36,7 @@ impl std::str::FromStr for NoteKind {
             "quote" => Ok(Self::Quote),
             "question" => Ok(Self::Question),
             "toc" => Ok(Self::Toc),
+            "todo" => Ok(Self::Todo),
             _ => Ok(Self::Note),
         }
     }
