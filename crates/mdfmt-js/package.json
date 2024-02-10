@@ -5,7 +5,7 @@
     "types": "index.d.ts",
     "scripts": {
         "build": "run-s build:wasm build:bundle",
-        "build:wasm": "wasm-pack build --target bundler",
+        "build:wasm": "wasm-pack build --target web",
         "build:bundle": "esbuild main.js --bundle --format=cjs --loader:.wasm=base64 --outfile=index.js"
     },
     "devDependencies": {
