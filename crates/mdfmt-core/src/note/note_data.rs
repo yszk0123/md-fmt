@@ -195,6 +195,7 @@ mod tests {
                     Block::card(NoteKind::Summary, None, vec![]),
                     Block::card(NoteKind::Quote, None, vec![]),
                     Block::card(NoteKind::Question, None, vec![]),
+                    Block::card(NoteKind::Todo, None, vec![]),
                 ],
             )
             .print(())?,
@@ -210,6 +211,8 @@ mod tests {
                 > [!quote]
 
                 > [!question]
+
+                > [!todo]
             "}
         );
         Ok(())

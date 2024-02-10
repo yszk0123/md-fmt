@@ -17,6 +17,7 @@ const KIND_LIST: &[(&str, &NoteKind)] = &[
     ("[!quote]", &NoteKind::Quote),
     ("[!summary]", &NoteKind::Summary),
     ("[!toc]", &NoteKind::Toc),
+    ("[!todo]", &NoteKind::Todo),
 ];
 
 impl NoteParser {
@@ -313,6 +314,7 @@ mod tests {
                 block_quote(vec![paragraph(vec![text("[!quote]\nfoo")])]),
                 block_quote(vec![paragraph(vec![text("[!question]\nfoo")])]),
                 block_quote(vec![paragraph(vec![text("[!toc]\n- foo")])]),
+                block_quote(vec![paragraph(vec![text("[!todo]\nfoo")])]),
             ]))?,
             Note::new(
                 None,
@@ -328,6 +330,7 @@ mod tests {
                     Block::card(NoteKind::Quote, None, vec![Block::text("foo")]),
                     Block::card(NoteKind::Question, None, vec![Block::text("foo")]),
                     Block::toc(vec![FlattenNode(1, String::from("foo"))]),
+                    Block::card(NoteKind::Todo, None, vec![Block::text("foo")]),
                 ])],
             )
         );
