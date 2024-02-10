@@ -17,12 +17,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly
-          override: true
-          components: rustfmt, clippy
+        run: |
+          rustup set profile minimal
+          rustup install stable
+          rustup override set stable
+          rustup component add rustfmt clippy
       - name: Cache
         uses: Swatinem/rust-cache@v2
       - name: Check
